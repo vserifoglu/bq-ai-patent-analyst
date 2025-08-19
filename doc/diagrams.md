@@ -9,33 +9,105 @@ This file contains the architectural and workflow diagrams for the "AI Patent An
 This diagram illustrates the end-to-end data flow, from ingesting raw patent PDFs to generating the final AI-powered analysis.
 
 ```mermaid
-graph TD
-    subgraph "Input Source"
-        A[fa:fa-file-pdf Patent PDFs in Cloud Storage]
+flowchart TD
+    %% --- LEGEND --- 
+    subgraph Legend [Color Legend]
+        direction LR
+        L_GPT[GPT/GenAI Function]:::ai-function
+        L_Data[Data Storage]:::data-storage
+        L_Process[Processing Logic]:::processing-logic
+        L_Result[Results & Output]:::results-output
+        L_Input[User Input]:::user-input
     end
 
-    subgraph "Multimodal Pioneer"
-        B["Text Extraction<br>(ML.GENERATE_TEXT)"]
-        C["Diagram Analysis<br>(ML.GENERATE_TEXT)"]
+    %% --- MAIN PIPELINE ---
+    subgraph SG1 [ ]
+        title1[1- Data Ingestion]
+        A[GCS Bucket: Raw PDFs] -->|Creates SQL Interface via<br><strong>Object Table</strong>| B[BQ: patent_documents_object_table]
     end
 
-    subgraph "Semantic Detective"
-        D["Create Multimodal Embeddings<br>(ML.GENERATE_EMBEDDING)"]
-        E[fa:fa-user User Query] --> F{Vector Search}
-        D --> F
+    subgraph SG2 [ ]
+        title2[2- Multimodal Extraction]
+        B -->|Processes PDFs| C[<strong>ML.GENERATE_TEXT</strong><br><em>Gemini Model</em>]
+        C -->|Extracts PDFs' Text & Diagrams Description | D[BQ: ai_text_extraction]
     end
 
-    subgraph "AI Architect"
-        G["Generate Summaries/Tables<br>(AI.GENERATE_TABLE)"]
-        F --> G
-        G --> H[fa:fa-file-alt Analyst Report]
+    subgraph SG3 [ ]
+        title3[3- Knowledge Graph Generation]
+        D -->|Feeds Consolidated Text| E[<strong>AI.GENERATE_TABLE</strong><br><em>Gemini Model</em>]
+        E -->|Outputs Nested 
+              Technical Components| F[BQ: patent_knowledge_graph]
+        
+        F -->|UNNEST| G[BQ: patent_components_flat]
+        G -->|Generates Vectors| H[<strong>ML.GENERATE_EMBEDDING</strong>]
+        H --> I[BQ: component_function_embeddings]
     end
 
-    A --> B
-    A --> C
-    B --> D
-    C --> D
+    subgraph SG4 [ ]
+        title4[4- Analytical Applications]
+        G -->|Feeds Flattened Data| J[SQL Queries<br><em>GROUP BY, AVG, etc.</em>]
+        J --> K[fa:fa-chart-bar Quantitative Insights]
+    end
 
-    style A fill:#f9f,stroke:#333,stroke-width:2px
-    style H fill:#bbf,stroke:#333,stroke-width:2px
+    subgraph SG5 [ ]
+        title5[5- Semantic Search Construction]
+        D -->|Generates Vectors| L[<strong>ML.GENERATE_EMBEDDING</strong>]
+        L --> M[BQ: patent_context_embeddings]
+        
+        M --> N[<strong>Custom UDF</strong><br>Combines & averages Vectors]
+        I --> N
+        N --> O[BQ: component_search_index]
+    end
+
+    subgraph SG6 [ ]
+        title6[6- Semantic Search Usage]
+        P[User Query] --> Q[<strong>VECTOR_SEARCH</strong>]
+        O --> Q
+        Q --> R[fa:fa-search Search Results]
+    end
+
+    %% -- STYLING DEFINITIONS -- 
+    
+    %% Define CSS classes for the legend and main nodes
+    classDef ai-function fill:#d47461,stroke:#a85a4b,stroke-width:2px,color:#fff
+    classDef data-storage fill:#4a7bd0,stroke:#2a4b8d,stroke-width:2px,color:#fff
+    classDef processing-logic fill:#6c9d7f,stroke:#436953,stroke-width:2px,color:#fff
+    classDef results-output fill:#e6b87a,stroke:#b3874f,stroke-width:2px,color:#333
+    classDef user-input fill:#95a3b9,stroke:#6c7991,stroke-width:2px,color:#fff
+    classDef legend-box fill:#fafafa,stroke:#ddd,stroke-width:2px,color:#333
+
+    %% Apply classes to Main Pipeline Nodes
+    style A fill:#4a7bd0,stroke:#2a4b8d,stroke-width:2px,color:#fff
+    style B fill:#4a7bd0,stroke:#2a4b8d,stroke-width:2px,color:#fff
+    style D fill:#4a7bd0,stroke:#2a4b8d,stroke-width:2px,color:#fff
+    style F fill:#4a7bd0,stroke:#2a4b8d,stroke-width:2px,color:#fff
+    style I fill:#4a7bd0,stroke:#2a4b8d,stroke-width:2px,color:#fff
+    style M fill:#4a7bd0,stroke:#2a4b8d,stroke-width:2px,color:#fff
+    style O fill:#4a7bd0,stroke:#2a4b8d,stroke-width:2px,color:#fff
+
+    style C fill:#d47461,stroke:#a85a4b,stroke-width:2px,color:#fff
+    style E fill:#d47461,stroke:#a85a4b,stroke-width:2px,color:#fff
+    style H fill:#d47461,stroke:#a85a4b,stroke-width:2px,color:#fff
+    style L fill:#d47461,stroke:#a85a4b,stroke-width:2px,color:#fff
+    style Q fill:#d47461,stroke:#a85a4b,stroke-width:2px,color:#fff
+
+    style N fill:#6c9d7f,stroke:#436953,stroke-width:2px,color:#fff
+
+    style K fill:#e6b87a,stroke:#b3874f,stroke-width:2px,color:#333
+    style R fill:#e6b87a,stroke:#b3874f,stroke-width:2px,color:#333
+
+    style P fill:#95a3b9,stroke:#6c7991,stroke-width:2px,color:#fff
+
+    %% Style for Titles and Legend
+    style title1 fill:#f9f9f9,stroke:none,color:#2d2d2d
+    style title2 fill:#f9f9f9,stroke:none,color:#2d2d2d
+    style title3 fill:#f9f9f9,stroke:none,color:#2d2d2d
+    style title4 fill:#f9f9f9,stroke:none,color:#2d2d2d
+    style title5 fill:#f9f9f9,stroke:none,color:#2d2d2d
+    style title6 fill:#f9f9f9,stroke:none,color:#2d2d2d
+    style Legend fill:#fafafa,stroke:#ddd,stroke-width:2px,color:#333
+
+    %% Style subgraphs for better visual separation
+    classDef default fill:#f8f9fc,stroke:#dde1eb,stroke-width:1px;
+    class SG1,SG2,SG3,SG4,SG5,SG6 default;
 ```
