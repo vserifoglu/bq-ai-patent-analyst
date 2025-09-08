@@ -1,4 +1,3 @@
-"""Application configuration and settings"""
 import os
 import json
 from dotenv import load_dotenv

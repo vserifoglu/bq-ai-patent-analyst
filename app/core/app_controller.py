@@ -1,17 +1,3 @@
-"""
-Main application controller - business logic and coordination
-
-Refactored for testability:
-- Removed global dependencies (sys.path, os.getenv)
-- Added AppConfig for dependency injection
-- All configuration now explicit and testable
-- Services created with proper error handling
-
-Testing Strategy:
-- Create AppConfig with test values
-- Mock BigQuery client and services
-- All methods now deterministic and testable
-"""
 from typing import Optional
 from dataclasses import dataclass
 

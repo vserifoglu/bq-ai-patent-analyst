@@ -1,4 +1,3 @@
-"""State management interface - framework independent"""
 from abc import ABC, abstractmethod
 from typing import Optional
 

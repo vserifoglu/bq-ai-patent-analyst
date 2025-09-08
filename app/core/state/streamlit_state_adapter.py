@@ -1,4 +1,3 @@
-"""Streamlit state adapter - framework-specific implementation"""
 import streamlit as st
 from typing import Optional, Callable
 from core.interfaces.state_interface import StateInterface

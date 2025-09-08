@@ -1,4 +1,3 @@
-"""Pure state manager - testable and framework independent"""
 from dataclasses import dataclass
 from typing import Optional
 from core.interfaces.state_interface import StateInterface
@@ -13,7 +12,7 @@ class AppState:
 
 
 class StateManager(StateInterface):
-    """Pure state manager - no external dependencies, fully testable"""
+    """state manager"""
     
     def __init__(self, initial_state: Optional[AppState] = None):
         """Initialize with optional initial state for testing"""

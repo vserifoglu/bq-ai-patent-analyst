@@ -1,16 +1,3 @@
-"""
-Dashboard Engine - Refactored for Testability
-
-Architecture:
-- Pure business logic methods (_get_*): Testable without UI framework
-- UI rendering methods (_render_*): Handle Streamlit-specific display
-- Coordinator methods (run, run_data_tab): Orchestrate business + UI
-
-Testing Strategy:
-- Test business logic by calling _get_* methods with mocked dependencies
-- Mock controller and state for isolated unit tests
-- UI methods can be tested separately or skipped in unit tests
-"""
 import streamlit as st
 
 from core.app_controller import AppController
@@ -38,18 +25,16 @@ class DashboardEngine:
         else:
             overview_data = self._get_overview_mode_data()
             self._render_overview_mode_ui(overview_data)
-
-    # ===== PURE BUSINESS LOGIC METHODS (TESTABLE) =====
     
     def _get_overview_mode_data(self) -> dict:
-        """Pure business logic for overview mode - testable"""
+        """Pure business logic for overview mode"""
         return {
             'mode': 'overview',
             'ready_for_search': True
         }
     
     def _get_search_mode_data(self, query: str) -> dict:
-        """Pure business logic for search mode - testable"""
+        """Pure business logic for search mode-"""
         search_data = self._get_search_results(query)
         return {
             'mode': 'search',
@@ -60,7 +45,7 @@ class DashboardEngine:
         }
     
     def _get_visualization_data(self) -> dict:
-        """Pure business logic for visualization data - testable"""
+        """Pure business logic for visualization data-"""
         try:
             status = self.controller.get_connection_status()
             
