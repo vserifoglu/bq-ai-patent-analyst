@@ -1,18 +1,19 @@
-"""Pure UI components for the Data Visualization tab - charts and analytics"""
 import streamlit as st
 import pandas as pd
 
 
 class DataVisualizationTabUI:
-    """Pure UI class for data visualization tab - no business logic"""
-    
+    """Dashboard UI class for data visualization tab"""
+
     def render_strategic_insights_header(self):
         """Display strategic insights section header"""
         st.markdown("#### 🎯 Strategic Insights from the Patent Corpus")
         st.markdown("""
-        The visualizations below provide a high-level overview of the entire 403-patent dataset. 
-        These strategic insights are only possible because BigQuery AI was used to transform the raw, 
-        unstructured PDFs into a structured and queryable knowledge graph.
+            The visualizations below provide a high-level overview of the 
+            entire 403-patent dataset. 
+            These strategic insights are only possible because BigQuery AI 
+            was used to transform the raw, unstructured PDFs into a structured 
+            and queryable knowledge graph.
         """)
     
     def render_component_analysis_header(self):
@@ -64,34 +65,34 @@ class DataVisualizationTabUI:
     def render_portfolio_explanation(self):
         """Display portfolio analysis explanation"""
         st.markdown("""
-        **Strategic Portfolio Analysis**
-        
-        This bubble chart reveals the strategic landscape of the patent portfolio:
-        
-        - **X-axis:** Average component complexity per patent
-        - **Y-axis:** Total number of patents in each category  
-        - **Bubble size:** Total components across all patents in category
-        
-        **Key Insights:**
-        - Large bubbles = Categories with many total components
-        - Right side = More complex individual patents
-        - Top side = More patents filed in that category
+            **Strategic Portfolio Analysis**
+            
+            This bubble chart reveals the strategic landscape of the patent portfolio:
+            
+            - **X-axis:** Average component complexity per patent
+            - **Y-axis:** Total number of patents in each category  
+            - **Bubble size:** Total components across all patents in category
+            
+            **Key Insights:**
+            - Large bubbles = Categories with many total components
+            - Right side = More complex individual patents
+            - Top side = More patents filed in that category
         """)
     
     def render_distribution_explanation(self):
         """Display distribution analysis explanation"""
         st.markdown("""
-        **Component Distribution Analysis**
-        
-        This histogram shows how components are distributed across patents:
-        
-        - **X-axis:** Number of components per patent
-        - **Y-axis:** Number of patents with that component count
-        
-        **What this reveals:**
-        - Most common patent complexity levels
-        - Whether patents tend to be simple or complex
-        - Outliers with unusually high/low component counts
+            **Component Distribution Analysis**
+            
+            This histogram shows how components are distributed across patents:
+            
+            - **X-axis:** Number of components per patent
+            - **Y-axis:** Number of patents with that component count
+            
+            **What this reveals:**
+            - Most common patent complexity levels
+            - Whether patents tend to be simple or complex
+            - Outliers with unusually high/low component counts
         """)
     
     def render_loading_spinner(self, message: str):

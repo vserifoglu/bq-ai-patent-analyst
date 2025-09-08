@@ -1,25 +1,24 @@
-"""Pure UI components for the Semantic Search tab - search and overview"""
 import streamlit as st
 import pandas as pd
 
 
 class SemanticSearchTabUI:
-    """Pure UI class for semantic search tab - no business logic"""
+    """UI class for semantic search tab"""
     
     def render_project_narrative(self):
         """Display project description and business impact"""
         st.markdown("""
-        ## The Challenge: Analyzing Unstructured Patent Data
-        
-        Patent analysis traditionally requires hundreds of hours of expensive expert analysis from patent lawyers 
-        or R&D engineers. This project solves the critical challenge of analyzing unstructured patent PDFs by 
-        building an end-to-end pipeline that transforms them into a structured, queryable Knowledge Graph.
-        
-        **Business Impact:**
-        - **Time Savings:** Reduce research time from hours to minutes
-        - **Cost Efficiency:** Automate tasks requiring expert analysis
-        - **Deep Insights:** Discover hidden technical patterns across patents
-        - **Scalable Analysis:** Process hundreds of patents automatically
+            ## The Challenge: Analyzing Unstructured Patent Data
+            
+            Patent analysis traditionally requires hundreds of hours of expensive expert analysis from patent lawyers 
+            or R&D engineers. This project solves the critical challenge of analyzing unstructured patent PDFs by 
+            building an end-to-end pipeline that transforms them into a structured, queryable Knowledge Graph.
+            
+            **Business Impact:**
+            - **Time Savings:** Reduce research time from hours to minutes
+            - **Cost Efficiency:** Automate tasks requiring expert analysis
+            - **Deep Insights:** Discover hidden technical patterns across patents
+            - **Scalable Analysis:** Process hundreds of patents automatically
         """)
     
     def render_search_box(self, current_query: str = "") -> dict:

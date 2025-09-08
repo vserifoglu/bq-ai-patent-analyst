@@ -1,4 +1,3 @@
-"""Header component with title and navigation"""
 import streamlit as st
 from config.settings import APP_TITLE
 

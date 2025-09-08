@@ -1,4 +1,3 @@
-"""Clean Dashboard UI Coordinator - combines tab components"""
 import streamlit as st
 
 from components.ui.semantic_search_tab import SemanticSearchTabUI
@@ -6,8 +5,8 @@ from components.ui.data_visualization_tab import DataVisualizationTabUI
 
 
 class DashboardUI:
-    """Clean UI coordinator that combines tab components"""
-    
+    """Dashboard UI Coordinator - combines tab components"""
+
     def __init__(self):
         """Initialize with tab UI components"""
         self.semantic_search_tab = SemanticSearchTabUI()
