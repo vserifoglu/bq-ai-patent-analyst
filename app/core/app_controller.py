@@ -17,9 +17,53 @@ import pandas as pd
 class AppController:
     """Main application controller handling all business logic"""
     
-    def __init__(self):
-        """Initialize the controller"""
-        self._bigquery_client = None
+    def __init__(self, bigquery_client=None, project_id=None):
+        """Initialize the controller with optional dependencies for testing"""
+        self._bigquery_client = bigquery_client
+        self._project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT_ID")
+    
+    def _get_bigquery_setup(self):
+        """Get BigQuery client and project ID, return (client, project_id, error_message)"""
+        # Check connection first
+        connection_status = self.get_connection_status()
+        if not connection_status.gcp_connected:
+            return None, None, f"BigQuery not connected: {connection_status.gcp_message}"
+        
+        # Get BigQuery client
+        if not self._bigquery_client:
+            self._bigquery_client = get_bigquery_client()
+        
+        if not self._bigquery_client:
+            return None, None, "Failed to get BigQuery client"
+        
+        # Get project ID
+        if not self._project_id:
+            return None, None, "GOOGLE_CLOUD_PROJECT_ID not configured"
+        
+        return self._bigquery_client, self._project_id, None
+    
+    def _format_search_results(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Convert search results DataFrame to display format"""
+        display_df = df.copy()
+        
+        # Rename columns for better display
+        display_df = display_df.rename(columns={
+            'uri': 'Patent URI',
+            'component_name': 'Component',
+            'component_function': 'Function',
+        })
+        
+        # Calculate similarity percentage
+        display_df['Similarity'] = ((1 - display_df['distance']) * 100).round().astype(int)
+        
+        # Drop the distance column
+        display_df = display_df.drop(columns=['distance'])
+        
+        # Reorder columns
+        columns_order = ['Patent URI', 'Component', 'Function', 'Similarity']
+        display_df = display_df[columns_order]
+        
+        return display_df
     
     def get_connection_status(self) -> ConnectionStatus:
         """Get current connection status"""
@@ -47,37 +91,21 @@ class AppController:
     
     def search_patents(self, request: SearchRequest) -> SearchResponse:
         """Perform patent search"""
-        # Validate connection first
-        connection_status = self.get_connection_status()
-        
-        if not connection_status.gcp_connected:
-            return SearchResponse(
-                success=False,
-                message=f"BigQuery not connected: {connection_status.gcp_message}",
-                query=request.query
-            )
+        # Get BigQuery setup
+        client, project_id, error = self._get_bigquery_setup()
+        if error:
+            return SearchResponse(success=False, message=error, query=request.query)
         
         try:
-            # Get BigQuery client
-            if not self._bigquery_client:
-                self._bigquery_client = get_bigquery_client()
-            
-            if not self._bigquery_client:
-                return SearchResponse(
-                    success=False,
-                    message="Failed to get BigQuery client",
-                    query=request.query
-                )
-            
             # Perform search
-            search_result = run_semantic_search(request.query, self._bigquery_client)
+            search_result = run_semantic_search(request.query, client)
             
             if search_result["success"]:
                 results_df = search_result["results"]
                 
                 if not results_df.empty:
                     # Convert DataFrame to display format
-                    display_df = self._prepare_results_dataframe(results_df)
+                    display_df = self._format_search_results(results_df)
                     
                     return SearchResponse.from_dataframe(
                         success=True,
@@ -105,103 +133,35 @@ class AppController:
                 query=request.query
             )
     
-    def _prepare_results_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Convert search results DataFrame to display format"""
-        display_df = df.copy()
-        
-        # Rename columns for better display
-        display_df = display_df.rename(columns={
-            'uri': 'Patent URI',
-            'component_name': 'Component',
-            'component_function': 'Function',
-        })
-        
-        # Calculate similarity percentage
-        display_df['Similarity'] = ((1 - display_df['distance']) * 100).round().astype(int)
-        
-        # Drop the distance column
-        display_df = display_df.drop(columns=['distance'])
-        
-        # Reorder columns
-        columns_order = ['Patent URI', 'Component', 'Function', 'Similarity']
-        display_df = display_df[columns_order]
-        
-        return display_df
-    
     def get_component_outliers(self):
         """Get component outliers analysis"""
-        # Check connection
-        connection_status = self.get_connection_status()
-        if not connection_status.gcp_connected:
-            return False, f"BigQuery not connected: {connection_status.gcp_message}", None
+        client, project_id, error = self._get_bigquery_setup()
+        if error:
+            return False, error, None
         
         try:
-            # Get BigQuery client
-            if not self._bigquery_client:
-                self._bigquery_client = get_bigquery_client()
-            
-            if not self._bigquery_client:
-                return False, "Failed to get BigQuery client", None
-            
-            # Get project ID from environment
-            import os
-            project_id = os.getenv("GOOGLE_CLOUD_PROJECT_ID")
-            if not project_id:
-                return False, "GOOGLE_CLOUD_PROJECT_ID not configured", None
-            
-            return detect_component_outliers(self._bigquery_client, project_id)
-            
+            return detect_component_outliers(client, project_id)
         except Exception as e:
             return False, f"Outlier analysis failed: {str(e)}", None
     
     def get_component_distribution(self):
         """Get component distribution data for histogram"""
-        # Check connection
-        connection_status = self.get_connection_status()
-        if not connection_status.gcp_connected:
-            return False, f"BigQuery not connected: {connection_status.gcp_message}", None
+        client, project_id, error = self._get_bigquery_setup()
+        if error:
+            return False, error, None
         
         try:
-            # Get BigQuery client
-            if not self._bigquery_client:
-                self._bigquery_client = get_bigquery_client()
-            
-            if not self._bigquery_client:
-                return False, "Failed to get BigQuery client", None
-            
-            # Get project ID from environment
-            import os
-            project_id = os.getenv("GOOGLE_CLOUD_PROJECT_ID")
-            if not project_id:
-                return False, "GOOGLE_CLOUD_PROJECT_ID not configured", None
-            
-            return get_component_distribution_data(self._bigquery_client, project_id)
-            
+            return get_component_distribution_data(client, project_id)
         except Exception as e:
             return False, f"Distribution analysis failed: {str(e)}", None
     
     def get_portfolio_analysis(self):
         """Get portfolio analysis data for bubble chart"""
-        # Check connection
-        connection_status = self.get_connection_status()
-        if not connection_status.gcp_connected:
-            return False, f"BigQuery not connected: {connection_status.gcp_message}", None
+        client, project_id, error = self._get_bigquery_setup()
+        if error:
+            return False, error, None
         
         try:
-            # Get BigQuery client
-            if not self._bigquery_client:
-                self._bigquery_client = get_bigquery_client()
-            
-            if not self._bigquery_client:
-                return False, "Failed to get BigQuery client", None
-            
-            # Get project ID from environment
-            import os
-            project_id = os.getenv("GOOGLE_CLOUD_PROJECT_ID")
-            if not project_id:
-                return False, "GOOGLE_CLOUD_PROJECT_ID not configured", None
-            
-            return get_portfolio_analysis_data(self._bigquery_client, project_id)
-            
+            return get_portfolio_analysis_data(client, project_id)
         except Exception as e:
             return False, f"Portfolio analysis failed: {str(e)}", None
