@@ -212,30 +212,3 @@ class SemanticSearchService:
             "message": f"Found {len(results_df)} results for '{raw_query}'.",
             "results": results_df
         }
-
-
-# Backward compatibility functions for existing code
-def run_semantic_search(
-    raw_query: str, 
-    client: bigquery.Client, 
-    distance_threshold: float = 0.8,
-    top_k: int = 70,
-    skip_classification: bool = False
-) -> Dict[str, Any]:
-    """
-    Backward compatibility wrapper for existing code.
-    Creates a default SearchConfig and SemanticSearchService.
-    """
-    if not client or not client.project:
-        return {
-            "success": False,
-            "message": "Invalid BigQuery client",
-            "results": None
-        }
-    
-    config = SearchConfig(project_id=client.project)
-    service = SemanticSearchService(config, client)
-    
-    return service.run_semantic_search(
-        raw_query, distance_threshold, top_k, skip_classification
-    )

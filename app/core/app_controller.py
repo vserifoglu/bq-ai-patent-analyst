@@ -9,7 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from core.models import SearchRequest, SearchResponse, ConnectionStatus, AppStats
 from utils.connection_utils import check_bigquery_connection, validate_environment, get_app_stats, format_number
 from utils.gcp_auth import get_bigquery_client
-from utils.semantic_search import run_semantic_search
+from utils.semantic_search import SemanticSearchService, SearchConfig
 from services.visualization_service import VisualizationService
 import pandas as pd
 
@@ -17,11 +17,12 @@ import pandas as pd
 class AppController:
     """Main application controller handling all business logic"""
     
-    def __init__(self, bigquery_client=None, project_id=None, visualization_service=None):
+    def __init__(self, bigquery_client=None, project_id=None, visualization_service=None, semantic_search_service=None):
         """Initialize the controller with optional dependencies for testing"""
         self._bigquery_client = bigquery_client
         self._project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT_ID")
         self._visualization_service = visualization_service
+        self._semantic_search_service = semantic_search_service
     
     def _get_bigquery_setup(self):
         """Get BigQuery client and project ID, return (client, project_id, error_message)"""
@@ -51,6 +52,16 @@ class AppController:
                 return None
             self._visualization_service = VisualizationService(client)
         return self._visualization_service
+    
+    def _get_semantic_search_service(self):
+        """Get semantic search service instance"""
+        if not self._semantic_search_service:
+            client, project_id, error = self._get_bigquery_setup()
+            if error:
+                return None
+            config = SearchConfig(project_id=project_id)
+            self._semantic_search_service = SemanticSearchService(config, client)
+        return self._semantic_search_service
     
     def _format_search_results(self, df: pd.DataFrame) -> pd.DataFrame:
         """Convert search results DataFrame to display format"""
@@ -101,14 +112,14 @@ class AppController:
     
     def search_patents(self, request: SearchRequest) -> SearchResponse:
         """Perform patent search"""
-        # Get BigQuery setup
-        client, project_id, error = self._get_bigquery_setup()
-        if error:
-            return SearchResponse(success=False, message=error, query=request.query)
-        
+        # Get semantic search service
+        semantic_search_service = self._get_semantic_search_service()
+        if not semantic_search_service:
+            return SearchResponse(success=False, message="Semantic search service not available", query=request.query)
+
         try:
-            # Perform search
-            search_result = run_semantic_search(request.query, client)
+            # Perform search using the service
+            search_result = semantic_search_service.run_semantic_search(request.query)
             
             if search_result["success"]:
                 results_df = search_result["results"]
