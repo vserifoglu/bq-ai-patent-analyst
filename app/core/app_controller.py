@@ -7,7 +7,7 @@ from typing import Optional
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from core.models import SearchRequest, SearchResponse, ConnectionStatus, AppStats
-from utils.data_processor import test_gcp_connection, validate_environment, get_app_stats, format_number
+from utils.connection_utils import check_bigquery_connection, validate_environment, get_app_stats, format_number
 from utils.gcp_auth import get_bigquery_client
 from utils.semantic_search import run_semantic_search
 from services.visualization_service import detect_component_outliers, get_component_distribution_data, get_portfolio_analysis_data
@@ -24,7 +24,7 @@ class AppController:
     def get_connection_status(self) -> ConnectionStatus:
         """Get current connection status"""
         env_valid, env_msg = validate_environment()
-        gcp_connected, gcp_msg = test_gcp_connection()
+        gcp_connected, gcp_msg = check_bigquery_connection()
         
         return ConnectionStatus(
             env_valid=env_valid,
