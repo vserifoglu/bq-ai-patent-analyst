@@ -86,6 +86,53 @@ class AppController:
         
         return display_df
     
+    def format_search_results_for_display(self, response: SearchResponse) -> pd.DataFrame:
+        """Convert SearchResponse to display DataFrame - extracted from dashboard"""
+        data = []
+        for result in response.results:
+            data.append({
+                "Patent URI": result.patent_uri,
+                "Component": result.component,
+                "Function": result.function,
+                "Similarity": result.similarity
+            })
+        
+        return pd.DataFrame(data)
+    
+    def get_formatted_component_outliers(self):
+        """Get component outliers with display formatting"""
+        success, message, df_outliers = self.get_component_outliers()
+        if success and df_outliers is not None and not df_outliers.empty:
+            visualization_service = self._get_visualization_service()
+            if visualization_service:
+                formatted_df = visualization_service.format_outlier_data_for_display(df_outliers)
+                return success, message, formatted_df
+        return success, message, df_outliers
+    
+    def get_formatted_distribution_chart_data(self):
+        """Get component distribution with chart formatting"""
+        success, message, df_distribution = self.get_component_distribution()
+        if success and df_distribution is not None:
+            # Also get outliers for chart markers
+            outlier_success, _, df_outliers = self.get_component_outliers()
+            visualization_service = self._get_visualization_service()
+            if visualization_service:
+                chart_data = visualization_service.format_distribution_chart_data(
+                    df_distribution, df_outliers if outlier_success else None
+                )
+                return success, message, chart_data
+        return success, message, None
+    
+    def get_formatted_portfolio_chart_data(self):
+        """Get portfolio analysis with chart formatting"""
+        success, message, df_portfolio = self.get_portfolio_analysis()
+        if success and df_portfolio is not None:
+            visualization_service = self._get_visualization_service()
+            if visualization_service:
+                chart_data = visualization_service.format_portfolio_chart_data(df_portfolio)
+                return success, message, chart_data
+        return success, message, None
+    
     def get_connection_status(self) -> ConnectionStatus:
         """Get current connection status"""
         env_valid, env_msg = validate_environment()

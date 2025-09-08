@@ -117,3 +117,105 @@ class VisualizationService:
             result.message = f"Retrieved portfolio analysis for {len(result.data)} applicants."
         
         return result
+    
+    def format_outlier_data_for_display(self, df_outliers: pd.DataFrame) -> pd.DataFrame:
+        """Format outlier data for UI display table"""
+        if df_outliers is None or df_outliers.empty:
+            return df_outliers
+            
+        display_df = df_outliers.copy()
+        # Extract patent ID from URI
+        display_df['Patent'] = display_df['uri'].apply(lambda x: x.split('/')[-1])
+        # Select and rename columns
+        display_df = display_df[['Patent', 'num_components']].rename(columns={
+            'Patent': 'Patent ID',
+            'num_components': 'Component Count'
+        })
+        # Sort by component count (descending)
+        display_df = display_df.sort_values('Component Count', ascending=False)
+        
+        return display_df
+    
+    def format_distribution_chart_data(self, df_distribution: pd.DataFrame, df_outliers: Optional[pd.DataFrame] = None) -> dict:
+        """Format distribution data for histogram chart with complete figure"""
+        try:
+            import plotly.express as px
+            
+            # Create histogram
+            fig = px.histogram(
+                df_distribution,
+                x="num_components",
+                title="Distribution of Component Counts",
+                labels={"num_components": "Number of Components per Patent"}
+            )
+            
+            # Add outlier markers if available
+            if df_outliers is not None and not df_outliers.empty:
+                for _, row in df_outliers.iterrows():
+                    fig.add_vline(
+                        x=row['num_components'],
+                        line_width=2,
+                        line_dash="dash",
+                        line_color="red"
+                    )
+            
+            # Configure layout
+            fig.update_layout(
+                xaxis_title="Number of Components",
+                yaxis_title="Number of Patents",
+                font=dict(family="Arial, sans-serif", size=12),
+                height=400
+            )
+            
+            return {
+                'figure': fig,
+                'has_plotly': True
+            }
+            
+        except ImportError:
+            return {
+                'figure': None,
+                'has_plotly': False,
+                'error': "Plotly not available"
+            }
+    
+    def format_portfolio_chart_data(self, df_portfolio: pd.DataFrame) -> dict:
+        """Format portfolio data for bubble chart with complete figure"""
+        try:
+            import plotly.express as px
+            
+            # Create bubble chart
+            fig = px.scatter(
+                df_portfolio,
+                x="innovation_breadth",
+                y="average_connection_density",
+                size="total_patents",
+                color="applican",
+                hover_name="applican",
+                size_max=60,
+                title="Strategic Patent Portfolio Analysis",
+                labels={
+                    "innovation_breadth": "Innovation Breadth (Number of Domains)",
+                    "average_connection_density": "Average Connection Density"
+                }
+            )
+            
+            # Configure layout
+            fig.update_layout(
+                showlegend=False,
+                xaxis_title="Innovation Breadth ➡️",
+                yaxis_title="Architectural Complexity ⬆️",
+                height=400
+            )
+            
+            return {
+                'figure': fig,
+                'has_plotly': True
+            }
+            
+        except ImportError:
+            return {
+                'figure': None,
+                'has_plotly': False,
+                'error': "Plotly not available"
+            }

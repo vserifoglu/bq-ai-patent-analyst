@@ -8,21 +8,19 @@ sys.path.append(os.path.dirname(__file__))
 
 from components.header import render_header
 from core.app_controller import AppController
-from pages.dashboard import DashboardUI
+from core.simple_dashboard_engine import SimpleDashboardEngine
+from core.state_manager import StateManager
 
 
 def main():
     """Main application entry point"""
-    # Initialize controller and UI
+    # Initialize components
     controller = AppController()
-    dashboard = DashboardUI(controller)
+    state_manager = StateManager()
+    engine = SimpleDashboardEngine(controller, state_manager)
     
-    # Initialize session state
-    dashboard.initialize_session_state()
-    
-    # Render app
+    # Render app header
     render_header()
-    dashboard.render_connection_status()
     
     # Page title
     st.markdown("# 🔬 AI Patent Analyst")
@@ -32,10 +30,12 @@ def main():
     tab1, tab2 = st.tabs(["🏠 Home & Search", "📊 Data Analysis"])
     
     with tab1:
-        dashboard.render_home_tab()
+        # Engine orchestrates everything
+        engine.run()
     
     with tab2:
-        dashboard.render_data_analysis_tab()
+        # Engine handles data analysis tab
+        engine.run_data_tab()
 
 
 if __name__ == "__main__":
