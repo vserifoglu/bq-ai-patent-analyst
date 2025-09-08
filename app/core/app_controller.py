@@ -9,7 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from core.models import SearchRequest, SearchResponse, ConnectionStatus, AppStats
 from utils.connection_utils import check_bigquery_connection, validate_environment, get_app_stats, format_number
 from utils.gcp_auth import get_bigquery_client
-from utils.semantic_search import SemanticSearchService, SearchConfig
+from services.semantic_search import SemanticSearchService, SearchConfig
 from services.visualization_service import VisualizationService
 import pandas as pd
 
