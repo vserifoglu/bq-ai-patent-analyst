@@ -1,10 +1,19 @@
-"""Main application controller - business logic and coordination"""
-import sys
-import os
-from typing import Optional
+"""
+Main application controller - business logic and coordination
 
-# Add the app directory to the path
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+Refactored for testability:
+- Removed global dependencies (sys.path, os.getenv)
+- Added AppConfig for dependency injection
+- All configuration now explicit and testable
+- Services created with proper error handling
+
+Testing Strategy:
+- Create AppConfig with test values
+- Mock BigQuery client and services
+- All methods now deterministic and testable
+"""
+from typing import Optional
+from dataclasses import dataclass
 
 from core.models import SearchRequest, SearchResponse, ConnectionStatus, AppStats
 from utils.connection_utils import check_bigquery_connection, validate_environment, get_app_stats, format_number
@@ -14,13 +23,41 @@ from services.visualization_service import VisualizationService
 import pandas as pd
 
 
+@dataclass
+class AppConfig:
+    """Configuration for application controller"""
+    project_id: str
+    dataset_id: str = "patent_analysis"
+    
+    @classmethod
+    def from_environment(cls) -> 'AppConfig':
+        """Create config from environment variables"""
+        import os
+        project_id = os.getenv("GOOGLE_CLOUD_PROJECT_ID")
+        if not project_id:
+            raise ValueError("GOOGLE_CLOUD_PROJECT_ID environment variable is required")
+        return cls(project_id=project_id)
+
+
 class AppController:
     """Main application controller handling all business logic"""
     
-    def __init__(self, bigquery_client=None, project_id=None, visualization_service=None, semantic_search_service=None):
-        """Initialize the controller with optional dependencies for testing"""
+    def __init__(self, 
+                 config: Optional[AppConfig] = None,
+                 bigquery_client=None, 
+                 visualization_service=None, 
+                 semantic_search_service=None):
+        """
+        Initialize the controller with configuration and optional dependencies for testing
+        
+        Args:
+            config: Application configuration (if None, loads from environment)
+            bigquery_client: Optional BigQuery client for testing
+            visualization_service: Optional visualization service for testing  
+            semantic_search_service: Optional search service for testing
+        """
+        self.config = config or AppConfig.from_environment()
         self._bigquery_client = bigquery_client
-        self._project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT_ID")
         self._visualization_service = visualization_service
         self._semantic_search_service = semantic_search_service
     
@@ -38,11 +75,8 @@ class AppController:
         if not self._bigquery_client:
             return None, None, "Failed to get BigQuery client"
         
-        # Get project ID
-        if not self._project_id:
-            return None, None, "GOOGLE_CLOUD_PROJECT_ID not configured"
-        
-        return self._bigquery_client, self._project_id, None
+        # Use project ID from config
+        return self._bigquery_client, self.config.project_id, None
     
     def _get_visualization_service(self):
         """Get visualization service instance"""
@@ -59,7 +93,7 @@ class AppController:
             client, project_id, error = self._get_bigquery_setup()
             if error:
                 return None
-            config = SearchConfig(project_id=project_id)
+            config = SearchConfig(project_id=project_id, dataset_id=self.config.dataset_id)
             self._semantic_search_service = SemanticSearchService(config, client)
         return self._semantic_search_service
     
@@ -208,7 +242,7 @@ class AppController:
             return False, "Visualization service not available", None
         
         try:
-            result = visualization_service.detect_component_outliers(self._project_id)
+            result = visualization_service.detect_component_outliers(self.config.project_id)
             return result.success, result.message, result.data
         except Exception as e:
             return False, f"Outlier analysis failed: {str(e)}", None
@@ -220,7 +254,7 @@ class AppController:
             return False, "Visualization service not available", None
         
         try:
-            result = visualization_service.get_component_distribution_data(self._project_id)
+            result = visualization_service.get_component_distribution_data(self.config.project_id)
             return result.success, result.message, result.data
         except Exception as e:
             return False, f"Distribution analysis failed: {str(e)}", None
@@ -232,7 +266,7 @@ class AppController:
             return False, "Visualization service not available", None
         
         try:
-            result = visualization_service.get_portfolio_analysis_data(self._project_id)
+            result = visualization_service.get_portfolio_analysis_data(self.config.project_id)
             return result.success, result.message, result.data
         except Exception as e:
             return False, f"Portfolio analysis failed: {str(e)}", None

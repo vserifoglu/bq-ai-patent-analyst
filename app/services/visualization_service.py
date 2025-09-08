@@ -1,12 +1,7 @@
 """Visualization service for data processing - handles BigQuery execution"""
-import sys
-import os
 import pandas as pd
 from typing import Optional, Protocol
 from dataclasses import dataclass
-
-# Add the app directory to the path
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from utils.visualization_queries import (
     get_outlier_detection_query,
