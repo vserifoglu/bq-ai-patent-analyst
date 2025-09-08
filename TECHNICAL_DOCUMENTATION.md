@@ -108,6 +108,12 @@ The application follows **Clean Architecture** principles with clear separation 
 - **Domain Services**: Core business logic
 - **Infrastructure**: External integrations
 
+**5. Recent Refactors (Batches 1–4)**
+- Core/UI decoupling: no Streamlit calls in `core/`; UI handles rendering via `DashboardUI` and `DataVisualizationTabUI` helpers
+- GCP auth cache decoupled from Streamlit: `utils/gcp_auth.get_bigquery_client(use_cache=True)` and `reset_bigquery_client_cache()`
+- AppController DI: accepts `bigquery_client_provider`; connection utilities accept optional client
+- State managers clarified: `StreamlitStateManager` (prod), `PureStateManager` (tests); `StateManager` alias retained for compatibility
+
 ---
 
 ## 🔧 Core Components
@@ -118,7 +124,7 @@ The application follows **Clean Architecture** principles with clear separation 
 ```python
 def main():
     controller = AppController()  # Business logic coordinator
-    state_manager = StateManager()  # State abstraction
+    state_manager = StreamlitStateManager()  # Explicit Streamlit adapter
     engine = DashboardEngine(controller, state_manager)  # UI orchestrator
 ```
 
@@ -139,10 +145,10 @@ class DashboardEngine:
     def run(self):
         if self.state.is_search_triggered():
             data = self._get_search_mode_data(query)      # Pure business logic
-            self._render_search_mode_ui(query, data)      # UI rendering
+            self._render_search_mode_ui(query, data)      # Delegates to UI layer
         else:
             data = self._get_overview_mode_data()         # Pure business logic  
-            self._render_overview_mode_ui(data)           # UI rendering
+            self._render_overview_mode_ui(data)           # Delegates to UI layer
 ```
 
 **Key Methods**:
@@ -150,11 +156,13 @@ class DashboardEngine:
   - `_get_overview_mode_data()` → Returns `dict`
   - `_get_search_mode_data(query)` → Returns `dict`
   - `_get_visualization_data()` → Returns `dict`
+    - `_get_search_results(query)` → Returns `dict`
 
 - **UI Rendering** (Framework-specific):
   - `_render_overview_mode_ui(data)`
   - `_render_search_mode_ui(query, data)`
   - `_render_data_tab_ui(data)`
+    - Handled via `DashboardUI` methods in `components/ui/`
 
 **Testing Strategy**:
 ```python
@@ -228,10 +236,12 @@ class StateInterface(ABC):
 **Usage Pattern**:
 ```python
 # Production (Streamlit)
-state = StreamlitStateAdapter()
+from core.state_manager import StreamlitStateManager
+state = StreamlitStateManager()
 
 # Testing (Pure)
-state = StateManager(initial_state=AppState(search_triggered=True))
+from core.state.state_manager import PureStateManager, AppState
+state = PureStateManager(initial_state=AppState(search_triggered=True))
 ```
 
 ### 5. Service Layer
@@ -308,7 +318,7 @@ class SemanticSearchTabUI:
 ```python
 # Constructor injection for testability
 class AppController:
-    def __init__(self, config: AppConfig, bigquery_client=None): ...
+    def __init__(self, config: AppConfig, bigquery_client=None, bigquery_client_provider=None): ...
 
 # Interface segregation
 class StateInterface(ABC): ...
@@ -317,8 +327,8 @@ class StateInterface(ABC): ...
 ### 2. **Strategy Pattern**
 ```python
 # Different state management strategies
-state_manager: StateInterface = StreamlitStateAdapter()  # Production
-state_manager: StateInterface = StateManager()          # Testing
+state_manager: StateInterface = StreamlitStateManager()  # Production
+state_manager: StateInterface = PureStateManager()       # Testing
 ```
 
 ### 3. **Template Method**
@@ -424,11 +434,9 @@ test_config = AppConfig(
 )
 
 # In-memory state for testing
-test_state = StateManager(
-    initial_state=AppState(
-        search_triggered=True,
-        search_query="test query"
-    )
+from core.state.state_manager import PureStateManager, AppState
+test_state = PureStateManager(
+    initial_state=AppState(search_triggered=True, search_query="test query")
 )
 ```
 
