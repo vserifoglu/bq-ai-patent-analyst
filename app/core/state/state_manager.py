@@ -11,8 +11,8 @@ class AppState:
     search_input: str = ""
 
 
-class StateManager(StateInterface):
-    """state manager"""
+class PureStateManager(StateInterface):
+    """Framework-independent in-memory state manager"""
     
     def __init__(self, initial_state: Optional[AppState] = None):
         """Initialize with optional initial state for testing"""
@@ -47,3 +47,6 @@ class StateManager(StateInterface):
     def set_search_input(self, input_value: str) -> None:
         """Set search input value (helper method)"""
         self.state.search_input = input_value
+
+# Backward-compatible alias (deprecated): will be removed after migration
+StateManager = PureStateManager

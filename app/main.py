@@ -3,14 +3,14 @@ import streamlit as st
 from components.header import render_header
 from core.app_controller import AppController
 from core.dashboard import DashboardEngine
-from core.state_manager import StateManager
+from core.state_manager import StreamlitStateManager
 
 
 def main():
     """Main application entry point"""
     # Initialize components with configuration
     controller = AppController()  # Uses config from environment
-    state_manager = StateManager()  # Now returns StreamlitStateAdapter
+    state_manager = StreamlitStateManager()
     engine = DashboardEngine(controller, state_manager)
     
     # Render app header

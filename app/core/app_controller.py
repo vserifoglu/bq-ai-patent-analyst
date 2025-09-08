@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Callable, Any
 from dataclasses import dataclass
 
 from core.models import SearchRequest, SearchResponse, ConnectionStatus, AppStats
@@ -32,7 +32,8 @@ class AppController:
                  config: Optional[AppConfig] = None,
                  bigquery_client=None, 
                  visualization_service=None, 
-                 semantic_search_service=None):
+                 semantic_search_service=None,
+                 bigquery_client_provider: Optional[Callable[[], Any]] = None):
         """
         Initialize the controller with configuration and optional dependencies for testing
         
@@ -46,6 +47,8 @@ class AppController:
         self._bigquery_client = bigquery_client
         self._visualization_service = visualization_service
         self._semantic_search_service = semantic_search_service
+        # Provider function for obtaining a BigQuery client (DI-friendly)
+        self._bigquery_client_provider = bigquery_client_provider or (lambda: get_bigquery_client())
     
     def _get_bigquery_setup(self):
         """Get BigQuery client and project ID, return (client, project_id, error_message)"""
@@ -56,7 +59,8 @@ class AppController:
         
         # Get BigQuery client
         if not self._bigquery_client:
-            self._bigquery_client = get_bigquery_client()
+            # Use injected provider (defaults to standard get_bigquery_client)
+            self._bigquery_client = self._bigquery_client_provider()
         
         if not self._bigquery_client:
             return None, None, "Failed to get BigQuery client"
@@ -156,7 +160,9 @@ class AppController:
     def get_connection_status(self) -> ConnectionStatus:
         """Get current connection status"""
         env_valid, env_msg = validate_environment()
-        gcp_connected, gcp_msg = check_bigquery_connection()
+        # Use injected or cached client for the connectivity probe
+        client = self._bigquery_client or self._bigquery_client_provider()
+        gcp_connected, gcp_msg = check_bigquery_connection(client)
         
         return ConnectionStatus(
             env_valid=env_valid,
@@ -168,7 +174,9 @@ class AppController:
     def get_app_stats(self) -> Optional[AppStats]:
         """Get application statistics"""
         try:
-            stats = get_app_stats()
+            # Prefer existing/injected client for stats query to avoid re-auth
+            client = self._bigquery_client or self._bigquery_client_provider()
+            stats = get_app_stats(client)
             return AppStats(
                 patent_count=format_number(stats["patent_count"]),
                 component_count=format_number(stats["component_count"]),

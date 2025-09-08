@@ -132,3 +132,29 @@ class DashboardEngine:
                 outliers=data.get('outliers', {})
             )
 
+    def _get_search_results(self, query: str) -> dict:
+        """Get search results and format for UI (business logic only)"""
+        try:
+            request = SearchRequest(query=query)
+            response = self.controller.search_patents(request)
+
+            if response.success and response.results:
+                display_df = self.controller.format_search_results_for_display(response)
+                return {
+                    'success': True,
+                    'message': response.message,
+                    'display_df': display_df
+                }
+            else:
+                return {
+                    'success': response.success,
+                    'message': response.message,
+                    'display_df': None
+                }
+        except Exception as e:
+            return {
+                'success': False,
+                'message': f"Search error: {str(e)}",
+                'display_df': None
+            }
+
