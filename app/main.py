@@ -1,4 +1,3 @@
-"""Main application launcher - ultra simple"""
 import streamlit as st
 
 from components.header import render_header
