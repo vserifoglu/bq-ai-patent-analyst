@@ -2,7 +2,8 @@
 import sys
 import os
 import pandas as pd
-from typing import Tuple, Optional
+from typing import Optional, Protocol
+from dataclasses import dataclass
 
 # Add the app directory to the path
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
@@ -14,58 +15,105 @@ from utils.visualization_queries import (
 )
 
 
-def detect_component_outliers(client, project_id: str) -> Tuple[bool, str, Optional[pd.DataFrame]]:
-    """
-    Detect patents with anomalous number of components
-    Returns: (success, message, dataframe)
-    """
-    try:
+class BigQueryClient(Protocol):
+    """Protocol for BigQuery client to enable dependency injection"""
+    def query(self, sql: str) -> 'QueryResult':
+        ...
+
+
+class QueryResult(Protocol):
+    """Protocol for query result to enable mocking"""
+    def to_dataframe(self) -> pd.DataFrame:
+        ...
+
+
+@dataclass
+class VisualizationResult:
+    """Structured result for visualization operations"""
+    success: bool
+    message: str
+    data: Optional[pd.DataFrame] = None
+    error_type: Optional[str] = None
+
+
+class VisualizationService:
+    """Service for visualization data processing with dependency injection"""
+    
+    def __init__(self, bigquery_client: Optional[BigQueryClient] = None):
+        """Initialize with optional BigQuery client for testing"""
+        self.client = bigquery_client
+    
+    def _execute_query(self, query: str, operation_name: str) -> VisualizationResult:
+        """Execute BigQuery query with consistent error handling"""
+        if not self.client:
+            return VisualizationResult(
+                success=False,
+                message="BigQuery client not available",
+                error_type="client_unavailable"
+            )
+        
+        try:
+            result = self.client.query(query)
+            df = result.to_dataframe()
+            
+            if df.empty:
+                return VisualizationResult(
+                    success=True,
+                    message=f"No data found for {operation_name}",
+                    data=df
+                )
+            
+            return VisualizationResult(
+                success=True,
+                message=f"Retrieved {operation_name} data for {len(df)} records",
+                data=df
+            )
+            
+        except Exception as e:
+            return VisualizationResult(
+                success=False,
+                message=f"{operation_name} failed: {str(e)}",
+                error_type="query_execution_error"
+            )
+
+    def detect_component_outliers(self, project_id: str) -> VisualizationResult:
+        """
+        Detect patents with anomalous number of components
+        """
         query = get_outlier_detection_query(project_id)
-        df_outliers = client.query(query).to_dataframe()
+        result = self._execute_query(query, "outlier detection")
         
-        if df_outliers.empty:
-            return True, "No significant outliers found in component counts.", df_outliers
-        else:
-            message = f"Found {len(df_outliers)} patents with unusually high number of components."
-            return True, message, df_outliers
-            
-    except Exception as e:
-        return False, f"Outlier detection failed: {str(e)}", None
-
-
-def get_component_distribution_data(client, project_id: str) -> Tuple[bool, str, Optional[pd.DataFrame]]:
-    """
-    Get component count distribution data for histogram
-    Returns: (success, message, dataframe)
-    """
-    try:
+        # Custom message for outlier detection
+        if result.success and result.data is not None:
+            if result.data.empty:
+                result.message = "No significant outliers found in component counts."
+            else:
+                result.message = f"Found {len(result.data)} patents with unusually high number of components."
+        
+        return result
+    
+    def get_component_distribution_data(self, project_id: str) -> VisualizationResult:
+        """
+        Get component count distribution data for histogram
+        """
         query = get_component_distribution_query(project_id)
-        df_distribution = client.query(query).to_dataframe()
+        result = self._execute_query(query, "component distribution")
         
-        if df_distribution.empty:
-            return False, "No component distribution data found.", None
-        else:
-            message = f"Retrieved component distribution for {len(df_distribution)} patents."
-            return True, message, df_distribution
-            
-    except Exception as e:
-        return False, f"Component distribution query failed: {str(e)}", None
-
-
-def get_portfolio_analysis_data(client, project_id: str) -> Tuple[bool, str, Optional[pd.DataFrame]]:
-    """
-    Get strategic patent portfolio analysis data for bubble chart
-    Returns: (success, message, dataframe)
-    """
-    try:
+        # Custom message for distribution
+        if result.success and result.data is not None and not result.data.empty:
+            result.message = f"Retrieved component distribution for {len(result.data)} patents."
+        
+        return result
+    
+    def get_portfolio_analysis_data(self, project_id: str) -> VisualizationResult:
+        """
+        Get strategic patent portfolio analysis data for bubble chart
+        """
         query = get_portfolio_analysis_query(project_id)
-        df_portfolio = client.query(query).to_dataframe()
+        result = self._execute_query(query, "portfolio analysis")
         
-        if df_portfolio.empty:
-            return False, "No portfolio analysis data found.", None
-        else:
-            message = f"Retrieved portfolio analysis for {len(df_portfolio)} applicants."
-            return True, message, df_portfolio
-            
-    except Exception as e:
-        return False, f"Portfolio analysis query failed: {str(e)}", None
+        # Custom message for portfolio analysis
+        if result.success and result.data is not None and not result.data.empty:
+            result.message = f"Retrieved portfolio analysis for {len(result.data)} applicants."
+        
+        return result

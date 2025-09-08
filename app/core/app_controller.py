@@ -10,17 +10,18 @@ from core.models import SearchRequest, SearchResponse, ConnectionStatus, AppStat
 from utils.connection_utils import check_bigquery_connection, validate_environment, get_app_stats, format_number
 from utils.gcp_auth import get_bigquery_client
 from utils.semantic_search import run_semantic_search
-from services.visualization_service import detect_component_outliers, get_component_distribution_data, get_portfolio_analysis_data
+from services.visualization_service import VisualizationService
 import pandas as pd
 
 
 class AppController:
     """Main application controller handling all business logic"""
     
-    def __init__(self, bigquery_client=None, project_id=None):
+    def __init__(self, bigquery_client=None, project_id=None, visualization_service=None):
         """Initialize the controller with optional dependencies for testing"""
         self._bigquery_client = bigquery_client
         self._project_id = project_id or os.getenv("GOOGLE_CLOUD_PROJECT_ID")
+        self._visualization_service = visualization_service
     
     def _get_bigquery_setup(self):
         """Get BigQuery client and project ID, return (client, project_id, error_message)"""
@@ -41,6 +42,15 @@ class AppController:
             return None, None, "GOOGLE_CLOUD_PROJECT_ID not configured"
         
         return self._bigquery_client, self._project_id, None
+    
+    def _get_visualization_service(self):
+        """Get visualization service instance"""
+        if not self._visualization_service:
+            client, project_id, error = self._get_bigquery_setup()
+            if error:
+                return None
+            self._visualization_service = VisualizationService(client)
+        return self._visualization_service
     
     def _format_search_results(self, df: pd.DataFrame) -> pd.DataFrame:
         """Convert search results DataFrame to display format"""
@@ -135,33 +145,36 @@ class AppController:
     
     def get_component_outliers(self):
         """Get component outliers analysis"""
-        client, project_id, error = self._get_bigquery_setup()
-        if error:
-            return False, error, None
+        visualization_service = self._get_visualization_service()
+        if not visualization_service:
+            return False, "Visualization service not available", None
         
         try:
-            return detect_component_outliers(client, project_id)
+            result = visualization_service.detect_component_outliers(self._project_id)
+            return result.success, result.message, result.data
         except Exception as e:
             return False, f"Outlier analysis failed: {str(e)}", None
     
     def get_component_distribution(self):
         """Get component distribution data for histogram"""
-        client, project_id, error = self._get_bigquery_setup()
-        if error:
-            return False, error, None
+        visualization_service = self._get_visualization_service()
+        if not visualization_service:
+            return False, "Visualization service not available", None
         
         try:
-            return get_component_distribution_data(client, project_id)
+            result = visualization_service.get_component_distribution_data(self._project_id)
+            return result.success, result.message, result.data
         except Exception as e:
             return False, f"Distribution analysis failed: {str(e)}", None
     
     def get_portfolio_analysis(self):
         """Get portfolio analysis data for bubble chart"""
-        client, project_id, error = self._get_bigquery_setup()
-        if error:
-            return False, error, None
+        visualization_service = self._get_visualization_service()
+        if not visualization_service:
+            return False, "Visualization service not available", None
         
         try:
-            return get_portfolio_analysis_data(client, project_id)
+            result = visualization_service.get_portfolio_analysis_data(self._project_id)
+            return result.success, result.message, result.data
         except Exception as e:
             return False, f"Portfolio analysis failed: {str(e)}", None
