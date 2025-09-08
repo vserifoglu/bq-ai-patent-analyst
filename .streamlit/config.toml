@@ -1,0 +1,27 @@
+[global]
+# Change to light or dark
+theme = "light"
+
+[server]
+# Port where the app will run
+port = 8501
+# Enable CORS for development
+enableCORS = false
+# Enable XSS protection
+enableXsrfProtection = false
+# Max upload size (200MB)
+maxUploadSize = 200
+
+[browser]
+# Automatically open browser (disable in container)
+gatherUsageStats = false
+
+[logger]
+# Logging level
+level = "info"
+
+[client]
+# Show error details
+showErrorDetails = true
+# Toolbar mode
+toolbarMode = "auto"
