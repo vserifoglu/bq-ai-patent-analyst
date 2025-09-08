@@ -98,3 +98,21 @@ class DataVisualizationTabUI:
     def render_loading_spinner(self, message: str):
         """Display loading spinner"""
         return st.spinner(message)
+
+    def render_connection_warning(self, gcp_message: str):
+        """Show connection warning when BigQuery is not connected"""
+        st.warning("🔗 Data visualization requires BigQuery connection")
+        if gcp_message:
+            st.info(gcp_message)
+        st.info("💡 Configure your environment to see real visualizations.")
+
+    def render_visualization_placeholder(self):
+        """Preview layout placeholders when disconnected"""
+        st.markdown("#### Preview Layout")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**Left Column:** Component Distribution Histogram")
+            st.container(height=200, border=True)
+        with col2:
+            st.markdown("**Right Column:** Strategic Portfolio Analysis")
+            st.container(height=200, border=True)

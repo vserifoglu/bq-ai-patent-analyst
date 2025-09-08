@@ -1,14 +1,17 @@
-"""Google Cloud Platform authentication and BigQuery client setup"""
+"""Google Cloud Platform authentication and BigQuery client setup.
+
+Batch 2: Decouple caching from Streamlit. Provide simple module-level caching
+with a reset hook for tests. Keep API-compatible `get_bigquery_client()`.
+"""
 import json
-import streamlit as st
+from typing import Optional, Dict, Any
 from google.cloud import bigquery
 from google.oauth2 import service_account
-from typing import Optional, Dict, Any
 from config.settings import (
-    GOOGLE_CLOUD_PROJECT_ID, 
-    GCP_SA_KEY_JSON, 
+    GOOGLE_CLOUD_PROJECT_ID,
+    GCP_SA_KEY_JSON,
     BQ_LOCATION,
-    validate_config
+    validate_config,
 )
 
 class GCPAuth:
@@ -90,13 +93,36 @@ class GCPAuth:
         self.credentials = None
         self.client = None
 
-# Global instance - separated for better testing
+_CACHED_CLIENT: Optional[bigquery.Client] = None
+
+
+# Global factory - separated for better testing
 def create_gcp_auth() -> GCPAuth:
     """Factory function to create GCPAuth instance"""
     return GCPAuth()
 
-@st.cache_resource
-def get_bigquery_client() -> Optional[bigquery.Client]:
-    """Get cached BigQuery client"""
+
+def get_bigquery_client(use_cache: bool = True) -> Optional[bigquery.Client]:
+    """Get BigQuery client with lightweight, test-friendly caching.
+
+    Args:
+        use_cache: When True (default), return a cached client if available.
+
+    Returns:
+        Optional[bigquery.Client]: Authenticated client or None if authentication failed.
+    """
+    global _CACHED_CLIENT
+    if use_cache and _CACHED_CLIENT is not None:
+        return _CACHED_CLIENT
+
     auth = create_gcp_auth()
-    return auth.get_client()
+    client = auth.get_client()
+    if client and use_cache:
+        _CACHED_CLIENT = client
+    return client
+
+
+def reset_bigquery_client_cache() -> None:
+    """Reset the cached BigQuery client (useful for tests)."""
+    global _CACHED_CLIENT
+    _CACHED_CLIENT = None
