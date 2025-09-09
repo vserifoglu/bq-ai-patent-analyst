@@ -17,12 +17,13 @@ class AppConfig:
     
     @classmethod
     def from_environment(cls) -> 'AppConfig':
-        """Create config from environment variables"""
-        import os
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT_ID")
+        """Create config from settings (supports Streamlit secrets fallback)"""
+        from config.settings import GOOGLE_CLOUD_PROJECT_ID, BQ_DATASET_ID
+        project_id = GOOGLE_CLOUD_PROJECT_ID
         if not project_id:
             raise ValueError("GOOGLE_CLOUD_PROJECT_ID environment variable is required")
-        return cls(project_id=project_id)
+        dataset_id = BQ_DATASET_ID or "patent_analysis"
+        return cls(project_id=project_id, dataset_id=dataset_id)
 
 
 class AppController:
