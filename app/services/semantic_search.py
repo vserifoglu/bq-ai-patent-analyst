@@ -171,20 +171,20 @@ class SemanticSearchService:
             }
         
         # Step 2: Check if query is technical (unless skipped)
-        if not skip_classification:
-            is_technical, error = self.is_query_technical(sanitized_query)
-            if error:
-                return {
-                    "success": False,
-                    "message": f"Classification failed: {error}",
-                    "results": None
-                }
-            if not is_technical:
-                return {
-                    "success": False,
-                    "message": "Query is not technical. Please enter a query related to a technical component or function.",
-                    "results": None
-                }
+        # if not skip_classification:
+        #     is_technical, error = self.is_query_technical(sanitized_query)
+        #     if error:
+        #         return {
+        #             "success": False,
+        #             "message": f"Classification failed: {error}",
+        #             "results": None
+        #         }
+        #     if not is_technical:
+        #         return {
+        #             "success": False,
+        #             "message": "Query is not technical. Please enter a query related to a technical component or function.",
+        #             "results": None
+        #         }
         
         # Step 3: Perform vector search
         results_df, error = self.perform_vector_search(

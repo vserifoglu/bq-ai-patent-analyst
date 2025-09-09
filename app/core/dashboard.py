@@ -112,12 +112,52 @@ class DashboardEngine:
                 self.state.trigger_search(search_actions['query'])
     
     def run_data_tab(self):
-        """Handle data visualization tab with progressive loading"""
-        # Get business data first
-        viz_data = self._get_visualization_data()
-        
-        # Render UI based on data
-        self._render_data_tab_ui(viz_data)
+        """Handle data visualization tab with progressive loading (section-by-section)"""
+        # Check connection first for fast feedback
+        status = self.controller.get_connection_status()
+        if not status.gcp_connected:
+            self.ui.render_data_tab_disconnected(status.gcp_message)
+            return
+
+        # Prepare progressive placeholders for sections
+        sections = self.ui.render_data_tab_connected_progressive()
+
+        # Fetch and render each section sequentially so users see results progressively
+        # 1) Portfolio analysis
+        try:
+            p_success, p_msg, p_chart = self.ui.run_with_spinner(
+                sections['portfolio_section'],
+                "Loading strategic portfolio analysis...",
+                lambda: self.controller.get_formatted_portfolio_chart_data()
+            )
+            p_payload = {'success': p_success, 'message': p_msg, 'data': p_chart}
+            self.ui.render_portfolio_section(sections['portfolio_section'], p_payload)
+        except Exception as e:
+            self.ui.render_section_error(sections['portfolio_section'], f"Portfolio section error: {str(e)}")
+
+        # 2) Distribution analysis
+        try:
+            d_success, d_msg, d_chart = self.ui.run_with_spinner(
+                sections['distribution_section'],
+                "Loading component distribution analysis...",
+                lambda: self.controller.get_formatted_distribution_chart_data()
+            )
+            d_payload = {'success': d_success, 'message': d_msg, 'data': d_chart}
+            self.ui.render_distribution_section(sections['distribution_section'], d_payload)
+        except Exception as e:
+            self.ui.render_section_error(sections['distribution_section'], f"Distribution section error: {str(e)}")
+
+        # 3) Outlier detection
+        try:
+            o_success, o_msg, o_df = self.ui.run_with_spinner(
+                sections['outlier_section'],
+                "Performing outlier detection analysis...",
+                lambda: self.controller.get_formatted_component_outliers()
+            )
+            o_payload = {'success': o_success, 'message': o_msg, 'data': o_df}
+            self.ui.render_outlier_section(sections['outlier_section'], o_payload)
+        except Exception as e:
+            self.ui.render_section_error(sections['outlier_section'], f"Outlier section error: {str(e)}")
     
     def _render_data_tab_ui(self, data: dict):
         """Render data tab UI based on business data"""

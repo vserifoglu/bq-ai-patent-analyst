@@ -20,16 +20,16 @@ def main():
     st.markdown("# 🔬 AI Patent Analyst")
     st.markdown("*From Unstructured PDFs to Queryable Knowledge Graph*")
     
-    # Two-tab layout
-    tab1, tab2 = st.tabs(["🏠 Home & Search", "📊 Data Analysis"])
-    
+    # Two-tab layout (Visualization first)
+    tab1, tab2 = st.tabs(["📊 Data Analysis", "🔎 Semantic Search"])
+
     with tab1:
-        # Engine orchestrates everything
-        engine.run()
-    
-    with tab2:
-        # Engine handles data analysis tab
+        # Engine handles data analysis tab first
         engine.run_data_tab()
+
+    with tab2:
+        # Engine orchestrates home & search as second tab
+        engine.run()
 
 
 if __name__ == "__main__":

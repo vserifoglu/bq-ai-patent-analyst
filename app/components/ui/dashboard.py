@@ -106,3 +106,87 @@ class DashboardUI:
                         st.error(f"❌ Outlier detection failed: {outliers.get('message', 'No message')}")
                 except Exception as e:
                     st.error(f"❌ Outlier section error: {str(e)}")
+
+    def run_with_spinner(self, target, message: str, fn):
+        """Run a callable within a spinner tied to a placeholder; return its result.
+        Expects fn to return either a tuple or a single value.
+        """
+        with target.container():
+            with st.spinner(message):
+                return fn()
+
+    # --- Progressive section helpers used by engine.run_data_tab ---
+    def render_portfolio_section_loading(self, target):
+        with target.container():
+            with st.spinner("Loading strategic portfolio analysis..."):
+                self.data_viz_tab.render_strategic_insights_header()
+                st.empty()
+
+    def render_distribution_section_loading(self, target):
+        with target.container():
+            with st.spinner("Loading component distribution analysis..."):
+                self.data_viz_tab.render_component_analysis_header()
+                st.empty()
+
+    def render_outlier_section_loading(self, target):
+        with target.container():
+            with st.spinner("Performing outlier detection analysis..."):
+                st.markdown("**Component Count Outlier Detection**")
+                st.empty()
+
+    def render_portfolio_section(self, target, portfolio: dict):
+        with target.container():
+            try:
+                self.data_viz_tab.render_strategic_insights_header()
+                col1, col2 = st.columns([2, 1])
+                with col1:
+                    if portfolio.get('success') and portfolio.get('data') and portfolio['data'].get('has_plotly'):
+                        st.plotly_chart(portfolio['data']['figure'], use_container_width=True)
+                        if portfolio.get('message'):
+                            st.success(f"✅ {portfolio['message']}")
+                    else:
+                        st.error(f"❌ Portfolio analysis failed: {portfolio.get('message', 'No message')}")
+                with col2:
+                    self.data_viz_tab.render_portfolio_explanation()
+                st.markdown("---")
+            except Exception as e:
+                st.error(f"❌ Portfolio section error: {str(e)}")
+
+    def render_distribution_section(self, target, distribution: dict):
+        with target.container():
+            try:
+                self.data_viz_tab.render_component_analysis_header()
+                col1, col2 = st.columns([2, 1])
+                with col1:
+                    if distribution.get('success') and distribution.get('data') and distribution['data'].get('has_plotly'):
+                        st.plotly_chart(distribution['data']['figure'], use_container_width=True)
+                        if distribution.get('message'):
+                            st.success(f"✅ {distribution['message']}")
+                    else:
+                        st.error(f"❌ Distribution analysis failed: {distribution.get('message', 'No message')}")
+                with col2:
+                    self.data_viz_tab.render_distribution_explanation()
+                st.markdown("---")
+            except Exception as e:
+                st.error(f"❌ Distribution section error: {str(e)}")
+
+    def render_outlier_section(self, target, outliers: dict):
+        with target.container():
+            try:
+                st.markdown("**Component Count Outlier Detection**")
+                if outliers.get('success'):
+                    df_out = outliers.get('data')
+                    msg = outliers.get('message', '')
+                    if df_out is not None and hasattr(df_out, 'empty') and not df_out.empty:
+                        st.warning(f"⚠️ {msg}")
+                        st.dataframe(df_out, use_container_width=True, hide_index=True)
+                    else:
+                        st.success(f"✅ {msg}")
+                else:
+                    st.error(f"❌ Outlier detection failed: {outliers.get('message', 'No message')}")
+            except Exception as e:
+                st.error(f"❌ Outlier section error: {str(e)}")
+
+    def render_section_error(self, target, message: str):
+        with target.container():
+            st.error(message)
