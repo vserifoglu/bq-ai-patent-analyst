@@ -41,14 +41,15 @@ APP_TITLE = os.getenv("APP_TITLE") or _from_secrets("APP_TITLE", "AI Patent Anal
 APP_SUBTITLE = "Semantic Search for Patent Components"
 
 # Google Cloud Configuration
-GOOGLE_CLOUD_PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT_ID") or _from_secrets("GOOGLE_CLOUD_PROJECT_ID")
+from config.secret_source import get_gcp_sa_json, get_project_id_fallback
 
-# Ensure service account key is a JSON string; handle dicts from secrets by dumping to JSON
-_GCP_SA_RAW = os.getenv("GCP_SA_KEY") or _from_secrets("GCP_SA_KEY")
-if isinstance(_GCP_SA_RAW, dict):
-    GCP_SA_KEY_JSON = json.dumps(_GCP_SA_RAW)
-else:
-    GCP_SA_KEY_JSON = _GCP_SA_RAW
+GOOGLE_CLOUD_PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT_ID") or _from_secrets("GOOGLE_CLOUD_PROJECT_ID")
+# Fallback project from SA dict when not explicitly provided
+if not GOOGLE_CLOUD_PROJECT_ID:
+    GOOGLE_CLOUD_PROJECT_ID = get_project_id_fallback()
+
+# Source a canonical SA JSON from env or secrets (supports decomposed TOML)
+GCP_SA_KEY_JSON = get_gcp_sa_json()
 
 BQ_LOCATION = os.getenv("BQ_LOCATION") or _from_secrets("BQ_LOCATION", "US")
 
