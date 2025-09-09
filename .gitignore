@@ -103,3 +103,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+# TOML secrets
+secrets.toml
