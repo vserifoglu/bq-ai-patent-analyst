@@ -195,31 +195,29 @@ class AppController:
 
         try:
             # Perform search using the service
-            search_result = semantic_search_service.run_semantic_search(request.query)
-            
-            if search_result["success"]:
-                results_df = search_result["results"]
-                
-                if not results_df.empty:
+            success, message, results_df = semantic_search_service.run_semantic_search(request.query)
+
+            if success:
+                if results_df is not None and not results_df.empty:
                     # Convert DataFrame to display format
                     display_df = self._format_search_results(results_df)
-                    
+
                     return SearchResponse.from_dataframe(
                         success=True,
-                        message=search_result["message"],
+                        message=message,
                         df=display_df,
                         query=request.query
                     )
                 else:
                     return SearchResponse(
                         success=True,
-                        message=search_result["message"],
+                        message=message,
                         query=request.query
                     )
             else:
                 return SearchResponse(
                     success=False,
-                    message=search_result["message"],
+                    message=message,
                     query=request.query
                 )
                 
@@ -265,3 +263,61 @@ class AppController:
             return result.success, result.message, result.data
         except Exception as e:
             return False, f"Portfolio analysis failed: {str(e)}", None
+
+    # ---------------- Phase A additions: grouped search ----------------
+    def search_patents_grouped(
+        self,
+        query: str,
+        distance_threshold: float = 0.8,
+        top_k: int = 70,
+        patents_limit: int = 20,
+        per_uri_limit: int = 5,
+    ) -> tuple[bool, str, Optional[pd.DataFrame]]:
+        """Run grouped-by-patent vector search and return a compact summary DataFrame."""
+        service = self._get_semantic_search_service()
+        if not service:
+            return False, "Semantic search service not available", None
+        try:
+            sanitized = service.sanitize_for_sql(query)
+            df, err = service.perform_grouped_search(
+                sanitized_query=sanitized,
+                distance_threshold=distance_threshold,
+                top_k=top_k,
+                patents_limit=patents_limit,
+                per_uri_limit=per_uri_limit,
+            )
+            if err:
+                return False, err, None
+            if df is None or df.empty:
+                return True, f"No patents found for '{query}'.", pd.DataFrame()
+            return True, f"Found {len(df)} patents for '{query}'.", df
+        except Exception as e:
+            return False, f"Grouped search failed: {str(e)}", None
+
+    def get_patent_components(
+        self,
+        query: str,
+        uri: str,
+        distance_threshold: float = 0.8,
+        top_k: int = 70,
+    ) -> tuple[bool, str, Optional[pd.DataFrame]]:
+        """Fetch detailed component hits for a single patent URI."""
+        service = self._get_semantic_search_service()
+        if not service:
+            return False, "Semantic search service not available", None
+        try:
+            sanitized_q = service.sanitize_for_sql(query)
+            sanitized_uri = service.sanitize_for_sql(uri)
+            df, err = service.get_components_for_uri(
+                sanitized_query=sanitized_q,
+                sanitized_uri=sanitized_uri,
+                distance_threshold=distance_threshold,
+                top_k=top_k,
+            )
+            if err:
+                return False, err, None
+            if df is None or df.empty:
+                return True, f"No components found for URI.", pd.DataFrame()
+            return True, "OK", df
+        except Exception as e:
+            return False, f"Detail fetch failed: {str(e)}", None

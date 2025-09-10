@@ -4,7 +4,7 @@ Simple implementation with independent, testable functions.
 """
 
 from google.cloud import bigquery
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Tuple
 import pandas as pd
 from dataclasses import dataclass
 
@@ -86,32 +86,109 @@ class SemanticSearchService:
             return False, None
         except Exception as e:
             return False, f"Error during query classification: {str(e)}"
-    
+
     def _build_vector_search_query(self, search_query: str, distance_threshold: float, top_k: int) -> str:
-        """Build SQL query for vector search - extracted for testing"""
-        return f"""
-            WITH search_results AS (
-              SELECT
-                base.uri, base.component_name, base.component_function, distance
-              FROM
-                VECTOR_SEARCH(
-                  TABLE `{self.config.project_id}.{self.config.dataset_id}.{self.config.search_index}`,
-                  'combined_vector',
-                  (
-                    SELECT ml_generate_embedding_result
-                    FROM ML.GENERATE_EMBEDDING(
-                      MODEL `{self.config.project_id}.{self.config.dataset_id}.{self.config.embedding_model}`,
-                      (
-                        SELECT CONCAT('Represent this technical patent component for semantic search: ', '{search_query}') AS content
-                      )
+            """Build SQL query for vector search - extracted for testing"""
+            return f"""
+                    WITH search_results AS (
+                        SELECT
+                            base.uri, base.component_name, base.component_function, distance
+                        FROM
+                            VECTOR_SEARCH(
+                                TABLE `{self.config.project_id}.{self.config.dataset_id}.{self.config.search_index}`,
+                                'combined_vector',
+                                (
+                                    SELECT ml_generate_embedding_result
+                                    FROM ML.GENERATE_EMBEDDING(
+                                        MODEL `{self.config.project_id}.{self.config.dataset_id}.{self.config.embedding_model}`,
+                                        (
+                                            SELECT CONCAT('Represent this technical patent component for semantic search: ', '{search_query}') AS content
+                                        )
+                                    )
+                                ),
+                                top_k => {top_k},
+                                distance_type => 'COSINE'
+                            )
                     )
-                  ),
-                  top_k => {top_k},
-                  distance_type => 'COSINE'
-                )
-            )
-            SELECT * FROM search_results WHERE distance < {distance_threshold};
-        """
+                    SELECT * FROM search_results WHERE distance < {distance_threshold};
+            """
+
+    def _build_grouped_search_query(
+            self,
+            search_query: str,
+            distance_threshold: float,
+            top_k: int,
+            patents_limit: int = 20,
+            per_uri_limit: int = 5,
+    ) -> str:
+            """Build SQL for grouped-by-patent results with top components per URI."""
+            return f"""
+                    WITH search_results AS (
+                        SELECT
+                            base.uri, base.component_name, base.component_function, distance
+                        FROM
+                            VECTOR_SEARCH(
+                                TABLE `{self.config.project_id}.{self.config.dataset_id}.{self.config.search_index}`,
+                                'combined_vector',
+                                (
+                                    SELECT ml_generate_embedding_result
+                                    FROM ML.GENERATE_EMBEDDING(
+                                        MODEL `{self.config.project_id}.{self.config.dataset_id}.{self.config.embedding_model}`,
+                                        (
+                                            SELECT CONCAT('Represent this technical patent component for semantic search: ', '{search_query}') AS content
+                                        )
+                                    )
+                                ),
+                                top_k => {top_k},
+                                distance_type => 'COSINE'
+                            )
+                    )
+                    SELECT
+                        uri,
+                        MIN(distance) AS best_distance,
+                        COUNT(1) AS hit_count,
+                        ARRAY_AGG(STRUCT(component_name, component_function, distance) ORDER BY distance ASC LIMIT {per_uri_limit}) AS top_components
+                    FROM search_results
+                    WHERE distance < {distance_threshold}
+                    GROUP BY uri
+                    ORDER BY best_distance ASC
+                    LIMIT {patents_limit}
+            """
+
+    def _build_detail_query(
+            self,
+            search_query: str,
+            uri: str,
+            distance_threshold: float,
+            top_k: int,
+    ) -> str:
+            """Build SQL to fetch all component hits for a specific patent URI."""
+            return f"""
+                    WITH search_results AS (
+                        SELECT
+                            base.uri, base.component_name, base.component_function, distance
+                        FROM
+                            VECTOR_SEARCH(
+                                TABLE `{self.config.project_id}.{self.config.dataset_id}.{self.config.search_index}`,
+                                'combined_vector',
+                                (
+                                    SELECT ml_generate_embedding_result
+                                    FROM ML.GENERATE_EMBEDDING(
+                                        MODEL `{self.config.project_id}.{self.config.dataset_id}.{self.config.embedding_model}`,
+                                        (
+                                            SELECT CONCAT('Represent this technical patent component for semantic search: ', '{search_query}') AS content
+                                        )
+                                    )
+                                ),
+                                top_k => {top_k},
+                                distance_type => 'COSINE'
+                            )
+                    )
+                    SELECT uri, component_name, component_function, distance
+                    FROM search_results
+                    WHERE distance < {distance_threshold} AND uri = '{uri}'
+                    ORDER BY distance ASC
+            """
 
     def perform_vector_search(
         self, 
@@ -140,35 +217,88 @@ class SemanticSearchService:
             return df, None
         except Exception as e:
             return None, f"Vector search failed: {str(e)}"
-    
-    def run_semantic_search(
-        self, 
-        raw_query: str, 
+
+    def perform_grouped_search(
+        self,
+        sanitized_query: str,
         distance_threshold: float = 0.8,
         top_k: int = 70,
-        skip_classification: bool = False
-    ) -> Dict[str, Any]:
+        patents_limit: int = 20,
+        per_uri_limit: int = 5,
+    ) -> Tuple[Optional[pd.DataFrame], Optional[str]]:
+        """Run grouped-by-patent search and return aggregated rows per URI.
+
+        Expects pre-sanitized query text (controller sanitizes before calling).
+        """
+        if not self.client:
+            return None, "BigQuery client not available"
+
+        if not sanitized_query:
+            return None, "Please enter a valid search query."
+
+        sql_query = self._build_grouped_search_query(
+            sanitized_query,
+            distance_threshold=distance_threshold,
+            top_k=top_k,
+            patents_limit=patents_limit,
+            per_uri_limit=per_uri_limit,
+        )
+        try:
+            df = self.client.query(sql_query).to_dataframe()
+            return df, None
+        except Exception as e:
+            return None, f"Grouped search failed: {str(e)}"
+
+    def get_components_for_uri(
+        self,
+        sanitized_query: str,
+        sanitized_uri: str,
+        distance_threshold: float = 0.8,
+        top_k: int = 70,
+    ) -> Tuple[Optional[pd.DataFrame], Optional[str]]:
+        """Fetch detailed component hits for a given patent URI.
+
+        Expects pre-sanitized inputs (controller sanitizes before calling).
+        """
+        if not self.client:
+            return None, "BigQuery client not available"
+
+        if not sanitized_query or not sanitized_uri:
+            return None, "Invalid query or URI."
+
+        sql_query = self._build_detail_query(
+            sanitized_query, sanitized_uri, distance_threshold=distance_threshold, top_k=top_k
+        )
+        try:
+            df = self.client.query(sql_query).to_dataframe()
+            return df, None
+        except Exception as e:
+            return None, f"Detail fetch failed: {str(e)}"
+    
+    def run_semantic_search(
+        self,
+        raw_query: str,
+        distance_threshold: float = 0.8,
+        top_k: int = 70,
+        skip_classification: bool = False,
+    ) -> Tuple[bool, str, Optional[pd.DataFrame]]:
         """
         Main orchestrator function that combines all search steps.
-        
+
         Args:
             raw_query: Raw user input
             distance_threshold: Maximum cosine distance for results
             top_k: Number of top results to fetch
             skip_classification: Skip technical classification (useful for testing)
-            
+
         Returns:
-            Dictionary with success status, message, and results
+            Tuple of (success, message, results_df)
         """
         # Step 1: Sanitize input
         sanitized_query = self.sanitize_for_sql(raw_query)
         
         if not sanitized_query:
-            return {
-                "success": False,
-                "message": "Please enter a valid search query.",
-                "results": None
-            }
+            return False, "Please enter a valid search query.", None
         
         # Step 2: Check if query is technical (unless skipped)
         # if not skip_classification:
@@ -194,21 +324,9 @@ class SemanticSearchService:
         )
         
         if error:
-            return {
-                "success": False,
-                "message": error,
-                "results": None
-            }
+            return False, error, None
         
         if results_df is None or results_df.empty:
-            return {
-                "success": True,
-                "message": f"No results found for '{raw_query}'. Try a different query.",
-                "results": results_df or pd.DataFrame()
-            }
-        
-        return {
-            "success": True,
-            "message": f"Found {len(results_df)} results for '{raw_query}'.",
-            "results": results_df
-        }
+            return True, f"No results found for '{raw_query}'. Try a different query.", results_df or pd.DataFrame()
+
+        return True, f"Found {len(results_df)} results for '{raw_query}'.", results_df

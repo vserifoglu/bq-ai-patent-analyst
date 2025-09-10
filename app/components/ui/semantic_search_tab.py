@@ -47,10 +47,14 @@ class SemanticSearchTabUI:
             
             # Search button
             search_clicked = st.button("🔍 Search Patents", type="primary", use_container_width=True)
+
+            # View toggle
+            grouped_view = st.toggle("Group results by patent", value=True, help="Show a patent summary with top component hits")
         
         return {
             'query': search_input.strip() if search_input else "",
-            'search_clicked': search_clicked
+            'search_clicked': search_clicked,
+            'grouped': grouped_view
         }
     
     def render_search_results(self, results_df: pd.DataFrame, message: str, success: bool):
@@ -85,6 +89,57 @@ class SemanticSearchTabUI:
                 st.info("💡 Configure your .env file to connect to real data.")
             else:
                 st.error(f"❌ {message}")
+
+    # ---------------- Phase A: Grouped results UI helpers ----------------
+    def render_grouped_header(self):
+        st.markdown("### 🧩 Grouped by patent")
+
+    def render_grouped_patent_card(self, uri: str, best_distance: float, hit_count: int, top_components_df, load_details=None):
+        exp = st.expander(f"{uri}", expanded=False)
+        with exp:
+            col1, col2 = st.columns([1,1])
+            with col1:
+                st.metric("Best distance", f"{best_distance:.3f}")
+            with col2:
+                st.metric("Matches", int(hit_count))
+            # Show top components immediately
+            if top_components_df is not None:
+                try:
+                    import pandas as _pd  # local import to avoid global hard dep
+                    if isinstance(top_components_df, list):
+                        # If list contains JSON strings, parse them first
+                        if len(top_components_df) > 0 and isinstance(top_components_df[0], str):
+                            import json as _json
+                            parsed = []
+                            for _s in top_components_df:
+                                try:
+                                    parsed.append(_json.loads(_s))
+                                except Exception:
+                                    continue
+                            _df = _pd.DataFrame(parsed)
+                        else:
+                            _df = _pd.DataFrame(top_components_df)
+                    else:
+                        _df = top_components_df
+                    if _df is not None and not _df.empty:
+                        st.markdown("Top components")
+                        st.dataframe(_df, use_container_width=True, hide_index=True)
+                except Exception:
+                    pass
+            # Load and show full components list without a button
+            if callable(load_details):
+                try:
+                    details = load_details()
+                    import pandas as _pd
+                    if isinstance(details, list):
+                        details_df = _pd.DataFrame(details)
+                    else:
+                        details_df = details
+                    if details_df is not None and not details_df.empty:
+                        st.markdown("All components")
+                        st.dataframe(details_df, use_container_width=True, hide_index=True)
+                except Exception:
+                    pass
     
     def render_loading_spinner(self, query: str):
         """Display loading spinner for search"""

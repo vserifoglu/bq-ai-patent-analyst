@@ -2,6 +2,7 @@ from core.app_controller import AppController
 from core.interfaces.state_interface import StateInterface
 from components.ui.dashboard import DashboardUI
 from core.models import SearchRequest
+import pandas as pd
 
 
 class DashboardEngine:
@@ -97,14 +98,83 @@ class DashboardEngine:
 
     def _render_search_mode_ui(self, query: str, data: dict):
         """Handle search mode UI rendering"""
-        # Render search mode UI
+        # Render search box (no results yet)
         search_actions = self.ui.render_home_search_mode(
             query=query,
-            results_df=data.get('display_df'),
-            message=data.get('message', ''),
-            success=data.get('success', False)
+            results_df=None,
+            message="",
+            success=True,
         )
-        
+        # Grouped view toggle handling and results rendering
+        grouped = bool(search_actions.get('grouped', True))
+        if grouped:
+            # Run grouped search via controller and render compact patent cards
+            ok, msg, df = self.controller.search_patents_grouped(query)
+            if ok and df is not None and not df.empty:
+                self.ui.semantic_search_tab.render_grouped_header()
+                for _, row in df.iterrows():
+                    uri = row.get('uri') if isinstance(row, dict) else row['uri']
+                    best_distance = float(row['best_distance']) if 'best_distance' in row else float(row.get('best_distance', 0))
+                    hit_count = int(row['hit_count']) if 'hit_count' in row else int(row.get('hit_count', 0))
+                    comps = row['top_components'] if 'top_components' in row else row.get('top_components', [])
+                    # Normalize to a DataFrame; handle list of JSON strings or list of dicts
+                    try:
+                        if isinstance(comps, list) and len(comps) > 0:
+                            first = comps[0]
+                            # Case 1: JSON strings -> parse
+                            if isinstance(first, str):
+                                import json as _json
+                                parsed = []
+                                for _s in comps:
+                                    try:
+                                        parsed.append(_json.loads(_s))
+                                    except Exception:
+                                        continue
+                                comps = parsed
+                            # Case 2: BigQuery Row objects or other mapping-like entries
+                            elif not isinstance(first, dict):
+                                converted = []
+                                for it in comps:
+                                    try:
+                                        converted.append(dict(it))
+                                    except Exception:
+                                        # As a fallback, use repr to avoid raw string blobs
+                                        continue
+                                if converted:
+                                    comps = converted
+                        top_df = pd.DataFrame(comps) if isinstance(comps, (list, tuple)) else None
+                    except Exception:
+                        top_df = None
+
+                    def _make_loader(u=uri):
+                        def _cb():
+                            ok2, _msg2, details = self.controller.get_patent_components(query, u)
+                            return details if ok2 else None
+                        return _cb
+
+                    self.ui.semantic_search_tab.render_grouped_patent_card(
+                        uri=uri,
+                        best_distance=best_distance,
+                        hit_count=hit_count,
+                        top_components_df=top_df,
+                        load_details=_make_loader(uri)
+                    )
+            else:
+                # Fall back to info message
+                self.ui.semantic_search_tab.render_grouped_header()
+                try:
+                    import streamlit as st
+                    st.info(msg or "No patents found.")
+                except Exception:
+                    pass
+        else:
+            # Flat results using existing formatted DataFrame
+            self.ui.semantic_search_tab.render_search_results(
+                results_df=data.get('display_df'),
+                message=data.get('message', ''),
+                success=data.get('success', False),
+            )
+
         # Handle new search
         if search_actions['search_clicked'] and search_actions['query']:
             if search_actions['query'] != query:  # New query
