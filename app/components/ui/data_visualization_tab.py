@@ -54,10 +54,23 @@ class DataVisualizationTabUI:
                 st.empty()  # Placeholder while loading
         elif has_outliers and outliers_df is not None and not outliers_df.empty:
             st.warning(f"⚠️ {message}")
+            col_cfg = None
+            try:
+                if 'Open' in outliers_df.columns:
+                    col_cfg = {
+                        'Open': st.column_config.LinkColumn(
+                            'Open',
+                            help='Open the PDF in a new tab',
+                            display_text='open patent ↗'
+                        )
+                    }
+            except Exception:
+                col_cfg = None
             st.dataframe(
                 outliers_df,
                 use_container_width=True,
-                hide_index=True
+                hide_index=True,
+                column_config=col_cfg
             )
         else:
             st.success(f"✅ {message}")

@@ -7,6 +7,7 @@ google-cloud-bigquery>=3.11.0
 google-auth>=2.22.0
 google-auth-oauthlib>=1.0.0
 google-auth-httplib2>=0.1.0
+google-cloud-storage>=2.14.0
 
 # Data processing and analysis
 pandas>=2.0.0

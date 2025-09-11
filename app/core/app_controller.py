@@ -6,6 +6,7 @@ from utils.connection_utils import check_bigquery_connection, validate_environme
 from utils.gcp_auth import get_bigquery_client
 from services.semantic_search import SemanticSearchService, SearchConfig
 from services.visualization_service import VisualizationService
+from utils.gcs_signer import generate_v4_signed_url
 import pandas as pd
 
 
@@ -115,8 +116,11 @@ class AppController:
         """Convert SearchResponse to display DataFrame - extracted from dashboard"""
         data = []
         for result in response.results:
+            # Show only the filename part of the URI for cleaner display
+            raw_uri = result.patent_uri
+            file_name = str(raw_uri).split('/')[-1] if isinstance(raw_uri, str) else raw_uri
             data.append({
-                "Patent URI": result.patent_uri,
+                "Patent URI": file_name,
                 "Component": result.component,
                 "Function": result.function,
                 "Similarity": result.similarity
@@ -128,10 +132,28 @@ class AppController:
         """Get component outliers with display formatting"""
         success, message, df_outliers = self.get_component_outliers()
         if success and df_outliers is not None and not df_outliers.empty:
-            visualization_service = self._get_visualization_service()
-            if visualization_service:
-                formatted_df = visualization_service.format_outlier_data_for_display(df_outliers)
-                return success, message, formatted_df
+            try:
+                # Build a display-ready DataFrame with a clickable signed URL
+                df = df_outliers.copy()
+                # Extract PDF file name from URI
+                df["PDF Name"] = df["uri"].apply(lambda x: str(x).split("/")[-1] if isinstance(x, str) else "")
+
+                # Generate signed URL per row (best-effort)
+                signed_urls: list[str | None] = []
+                for _uri in df["uri"].tolist():
+                    ok, _, url = self.get_signed_patent_url(str(_uri)) if isinstance(_uri, str) else (False, "", None)
+                    signed_urls.append(url if ok and url else None)
+                df["Open"] = signed_urls
+
+                # Rename and select columns for display
+                df = df.rename(columns={
+                    "num_components": "Component Count",
+                })
+                display_df = df[["PDF Name", "Component Count", "Open"]].sort_values("Component Count", ascending=False)
+                return success, message, display_df
+            except Exception:
+                # Fallback to raw if any formatting fails
+                return success, message, df_outliers
         return success, message, df_outliers
     
     def get_formatted_distribution_chart_data(self):
@@ -263,6 +285,20 @@ class AppController:
             return result.success, result.message, result.data
         except Exception as e:
             return False, f"Portfolio analysis failed: {str(e)}", None
+
+    # ---------------- Signed URL for patents ----------------
+    def get_signed_patent_url(self, uri: str, expires_minutes: int = 10) -> tuple[bool, str, str | None]:
+        """Generate a V4 signed HTTPS URL for a given gs:// patent URI.
+
+        Does not alter how URIs are displayed elsewhere.
+        """
+        try:
+            if not uri or not isinstance(uri, str) or not uri.startswith("gs://"):
+                return False, "URI must start with gs://", None
+            url = generate_v4_signed_url(uri, expires_minutes=expires_minutes)
+            return True, "OK", url
+        except Exception as e:
+            return False, f"Signing failed: {str(e)}", None
 
     # ---------------- Phase A additions: grouped search ----------------
     def search_patents_grouped(

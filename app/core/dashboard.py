@@ -152,12 +152,19 @@ class DashboardEngine:
                             return details if ok2 else None
                         return _cb
 
+                    def _make_signer(u=uri):
+                        def _sign():
+                            ok3, msg3, signed = self.controller.get_signed_patent_url(u)
+                            return ok3, msg3, signed
+                        return _sign
+
                     self.ui.semantic_search_tab.render_grouped_patent_card(
                         uri=uri,
                         best_distance=best_distance,
                         hit_count=hit_count,
                         top_components_df=top_df,
-                        load_details=_make_loader(uri)
+                        load_details=_make_loader(uri),
+                        open_patent_cb=_make_signer(uri)
                     )
             else:
                 # Fall back to info message

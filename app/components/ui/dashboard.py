@@ -99,7 +99,20 @@ class DashboardUI:
                         msg = outliers.get('message', '')
                         if df_out is not None and hasattr(df_out, 'empty') and not df_out.empty:
                             st.warning(f"⚠️ {msg}")
-                            st.dataframe(df_out, use_container_width=True, hide_index=True)
+                            # Render with clickable link if 'Open' URL column present
+                            col_cfg = None
+                            try:
+                                if 'Open' in df_out.columns:
+                                    col_cfg = {
+                                        'Open': st.column_config.LinkColumn(
+                                            'Open',
+                                            help='Open the PDF in a new tab',
+                                            display_text='open patent ↗'
+                                        )
+                                    }
+                            except Exception:
+                                col_cfg = None
+                            st.dataframe(df_out, use_container_width=True, hide_index=True, column_config=col_cfg)
                         else:
                             st.success(f"✅ {msg}")
                     else:
@@ -179,7 +192,20 @@ class DashboardUI:
                     msg = outliers.get('message', '')
                     if df_out is not None and hasattr(df_out, 'empty') and not df_out.empty:
                         st.warning(f"⚠️ {msg}")
-                        st.dataframe(df_out, use_container_width=True, hide_index=True)
+                        # Render with clickable link if 'Open' URL column present
+                        col_cfg = None
+                        try:
+                            if 'Open' in df_out.columns:
+                                col_cfg = {
+                                    'Open': st.column_config.LinkColumn(
+                                        'Open',
+                                        help='Open the PDF in a new tab',
+                                        display_text='open patent ↗'
+                                    )
+                                }
+                        except Exception:
+                            col_cfg = None
+                        st.dataframe(df_out, use_container_width=True, hide_index=True, column_config=col_cfg)
                     else:
                         st.success(f"✅ {msg}")
                 else:

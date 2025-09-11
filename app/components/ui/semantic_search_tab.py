@@ -94,9 +94,23 @@ class SemanticSearchTabUI:
     def render_grouped_header(self):
         st.markdown("### 🧩 Grouped by patent")
 
-    def render_grouped_patent_card(self, uri: str, best_distance: float, hit_count: int, top_components_df, load_details=None):
+    def render_grouped_patent_card(self, uri: str, best_distance: float, hit_count: int, top_components_df, load_details=None, open_patent_cb=None):
         exp = st.expander(f"{uri}", expanded=False)
         with exp:
+            # Prefetch signed URL and show a blue clickable link above the metrics
+            if callable(open_patent_cb):
+                @st.cache_data(show_spinner=False, ttl=600)
+                def _cached_signed_url(key: str):
+                    return open_patent_cb()
+
+                try:
+                    ok, msg, signed_url = _cached_signed_url(str(uri))
+                    if ok and signed_url:
+                        st.markdown(f"[open patent ↗]({signed_url})")
+                    else:
+                        st.caption(msg or "Link not available for this URI.")
+                except Exception:
+                    st.caption("Link not available.")
             col1, col2 = st.columns([1,1])
             with col1:
                 st.metric("Best distance", f"{best_distance:.3f}")
