@@ -37,13 +37,21 @@ class SemanticSearchTabUI:
                 with ex_cols[i]:
                     if st.button(label, key=f"ex_btn_{i}"):
                         ex_query = val
+                        # Write the example into the search box immediately
+                        try:
+                            st.session_state["search_input"] = val
+                        except Exception:
+                            pass
 
             st.markdown("")  # spacing
+
+            # Initialize the text input from current_query if first render
+            if "search_input" not in st.session_state:
+                st.session_state["search_input"] = current_query or ""
 
             # Search input field
             search_input = st.text_input(
                 "What technical function are you looking for?",
-                value=current_query,
                 placeholder="e.g., 'precise fluid delivery mechanism' or 'user authentication method'",
                 key="search_input",
                 help="Enter a functional description, e.g., 'a mechanism for precise fluid delivery' or 'a method for authenticating a user'."

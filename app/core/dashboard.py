@@ -105,11 +105,17 @@ class DashboardEngine:
             message="",
             success=True,
         )
+        # Use the most recent query immediately if user clicked an example or Search
+        active_query = (
+            search_actions.get('query')
+            if search_actions.get('search_clicked') and search_actions.get('query')
+            else query
+        )
         # Grouped view toggle handling and results rendering
         grouped = bool(search_actions.get('grouped', True))
         if grouped:
             # Run grouped search via controller and render compact patent cards
-            ok, msg, df = self.controller.search_patents_grouped(query)
+            ok, msg, df = self.controller.search_patents_grouped(active_query)
             if ok and df is not None and not df.empty:
                 self.ui.semantic_search_tab.render_grouped_header()
                 for _, row in df.iterrows():
@@ -148,7 +154,7 @@ class DashboardEngine:
 
                     def _make_loader(u=uri):
                         def _cb():
-                            ok2, _msg2, details = self.controller.get_patent_components(query, u)
+                            ok2, _msg2, details = self.controller.get_patent_components(active_query, u)
                             return details if ok2 else None
                         return _cb
 
@@ -176,11 +182,37 @@ class DashboardEngine:
                     pass
         else:
             # Flat results using existing formatted DataFrame
-            self.ui.semantic_search_tab.render_search_results(
-                results_df=data.get('display_df'),
-                message=data.get('message', ''),
-                success=data.get('success', False),
-            )
+            if active_query == query:
+                # Use pre-fetched data when query hasn't changed
+                self.ui.semantic_search_tab.render_search_results(
+                    results_df=data.get('display_df'),
+                    message=data.get('message', ''),
+                    success=data.get('success', False),
+                )
+            else:
+                # Fetch fresh flat results for the new query immediately
+                try:
+                    request = SearchRequest(query=active_query)
+                    response = self.controller.search_patents(request)
+                    if response.success and response.results:
+                        display_df = self.controller.format_search_results_for_display(response)
+                        self.ui.semantic_search_tab.render_search_results(
+                            results_df=display_df,
+                            message=response.message,
+                            success=True,
+                        )
+                    else:
+                        self.ui.semantic_search_tab.render_search_results(
+                            results_df=None,
+                            message=response.message,
+                            success=response.success,
+                        )
+                except Exception as e:
+                    self.ui.semantic_search_tab.render_search_results(
+                        results_df=None,
+                        message=f"Search error: {str(e)}",
+                        success=False,
+                    )
 
         # Handle new search
         if search_actions['search_clicked'] and search_actions['query']:
