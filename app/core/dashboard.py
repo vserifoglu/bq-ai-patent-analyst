@@ -118,7 +118,28 @@ class DashboardEngine:
             ok, msg, df = self.controller.search_patents_grouped(active_query)
             if ok and df is not None and not df.empty:
                 self.ui.semantic_search_tab.render_grouped_header()
+
+                # Inline streaming status + progress
+                try:
+                    import streamlit as st  # local import to avoid hard dependency at module level
+                    status_ph = st.empty()
+                    progress_bar = st.progress(0)
+                except Exception:
+                    status_ph = None
+                    progress_bar = None
+
+                total = len(df)
+                loaded = 0
                 for _, row in df.iterrows():
+                    loaded += 1
+                    try:
+                        if status_ph is not None:
+                            status_ph.markdown(f"🟡 Streaming results… Found {loaded} of {total} so far")
+                        if progress_bar is not None:
+                            pct = int((loaded / max(total, 1)) * 100)
+                            progress_bar.progress(min(max(pct, 0), 100))
+                    except Exception:
+                        pass
                     uri = row.get('uri') if isinstance(row, dict) else row['uri']
                     best_distance = float(row['best_distance']) if 'best_distance' in row else float(row.get('best_distance', 0))
                     hit_count = int(row['hit_count']) if 'hit_count' in row else int(row.get('hit_count', 0))
@@ -172,6 +193,15 @@ class DashboardEngine:
                         load_details=_make_loader(uri),
                         open_patent_cb=_make_signer(uri)
                     )
+
+                # Mark completion
+                try:
+                    if status_ph is not None:
+                        status_ph.success(f"✅ All results loaded ({total})")
+                    if progress_bar is not None:
+                        progress_bar.progress(100)
+                except Exception:
+                    pass
             else:
                 # Fall back to info message
                 self.ui.semantic_search_tab.render_grouped_header()
