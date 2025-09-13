@@ -140,7 +140,7 @@ class VisualizationService:
             fig = px.histogram(
                 df_distribution,
                 x="num_components",
-                title="Most Inventions Feature 2-10 Core Components",
+                title="",
                 labels={"num_components": "Number of Components per Patent"}
             )
             
@@ -174,12 +174,7 @@ class VisualizationService:
                 xaxis_title="Number of Components",
                 yaxis_title="Number of Patents",
                 font=dict(family="Arial, sans-serif", size=12),
-                height=400,
-                title={
-                    'text': 'Most Inventions Feature 2-10 Core Components',
-                    'x': 0.5,
-                    'xanchor': 'center'
-                }
+                height=400
             )
             
             return {
@@ -208,7 +203,7 @@ class VisualizationService:
                 color="applican",
                 hover_name="applican",
                 size_max=60,
-                title="competitive landscape: portfolio Breadth vs complexity",
+                title="",
                 labels={
                     "innovation_breadth": "Innovation Breadth (Number of Unique Domains)",
                     "average_connection_density": "Architectural Complexity (Avg. Connections per Patent)"
@@ -220,12 +215,7 @@ class VisualizationService:
                 showlegend=False,
                 xaxis_title="Innovation Breadth (Number of Unique Domains)",
                 yaxis_title="Architectural Complexity (Avg. Connections per Patent)",
-                height=400,
-                title={
-                    'text': 'competitive landscape: portfolio Breadth vs complexity',
-                    'x': 0.5,
-                    'xanchor': 'center'
-                }
+                height=400
             )
             
             return {

@@ -59,9 +59,13 @@ class DashboardUI:
             with st.spinner("Loading strategic portfolio analysis..."):
                 try:
                     self.data_viz_tab.render_strategic_insights_header()
+                    # Separation between overall title/statement and charts
+                    st.markdown("---")
+                    # Bubble chart title and key insight before the chart
+                    st.subheader("Competitive Landscape: Portfolio Breadth vs. Complexity")
+                    st.caption("Key Insight: Companies in the top-right quadrant demonstrate both diverse and highly complex patent portfolios.")
                     if portfolio.get('success') and portfolio.get('data') and portfolio['data'].get('has_plotly'):
                         st.plotly_chart(portfolio['data']['figure'], use_container_width=True)
-                        st.caption("Key Insight: Companies in the top-right quadrant demonstrate both diverse and highly complex patent portfolios.")
                         if portfolio.get('message'):
                             st.success(f"✅ {portfolio['message']}")
                     else:
@@ -76,10 +80,10 @@ class DashboardUI:
                 try:
                     st.subheader("Invention Complexity Analysis")
                     if distribution.get('success') and distribution.get('data') and distribution['data'].get('has_plotly'):
-                        st.plotly_chart(distribution['data']['figure'], use_container_width=True)
                         st.caption("""
                         Key Insight: The distribution shows that most patents are of low-to-medium complexity (2-10 components). The long tail of outliers corresponds to inventions with detailed technical diagrams, proving that our multimodal analysis is essential for capturing true architectural complexity.
                         """)
+                        st.plotly_chart(distribution['data']['figure'], use_container_width=True)
                         if distribution.get('message'):
                             st.success(f"✅ {distribution['message']}")
                     else:
@@ -153,9 +157,13 @@ class DashboardUI:
                 self.data_viz_tab.render_roi_section()
                 st.markdown("---")
                 self.data_viz_tab.render_strategic_insights_header()
+                # Separation between overall title/statement and charts
+                st.markdown("---")
+                # Bubble chart title and key insight before the chart
+                st.subheader("Competitive Landscape: Portfolio Breadth vs. Complexity")
+                st.caption("Key Insight: Companies in the top-right quadrant demonstrate both diverse and highly complex patent portfolios.")
                 if portfolio.get('success') and portfolio.get('data') and portfolio['data'].get('has_plotly'):
                     st.plotly_chart(portfolio['data']['figure'], use_container_width=True)
-                    st.caption("Key Insight: Companies in the top-right quadrant demonstrate both diverse and highly complex patent portfolios.")
                     if portfolio.get('message'):
                         st.success(f"✅ {portfolio['message']}")
                 else:
@@ -169,10 +177,10 @@ class DashboardUI:
             try:
                 st.subheader("Invention Complexity Analysis")
                 if distribution.get('success') and distribution.get('data') and distribution['data'].get('has_plotly'):
-                    st.plotly_chart(distribution['data']['figure'], use_container_width=True)
                     st.caption("""
                     Key Insight: The distribution shows that most patents are of low-to-medium complexity (2-10 components). The long tail of outliers corresponds to inventions with detailed technical diagrams, proving that our multimodal analysis is essential for capturing true architectural complexity.
                     """)
+                    st.plotly_chart(distribution['data']['figure'], use_container_width=True)
                     if distribution.get('message'):
                         st.success(f"✅ {distribution['message']}")
                 else:
