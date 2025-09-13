@@ -136,11 +136,11 @@ class VisualizationService:
         try:
             import plotly.express as px
             
-            # Create histogram
+            # Create histogram with descriptive title
             fig = px.histogram(
                 df_distribution,
                 x="num_components",
-                title="Distribution of Component Counts",
+                title="Most Inventions Feature 2-10 Core Components",
                 labels={"num_components": "Number of Components per Patent"}
             )
             
@@ -154,12 +154,32 @@ class VisualizationService:
                         line_color="red"
                     )
             
-            # Configure layout
+            # Add an annotation for outliers (long tail)
+            try:
+                x_max = float(df_distribution["num_components"].max())
+            except Exception:
+                x_max = None
+            fig.add_annotation(
+                x=x_max if x_max is not None else 0,
+                xref="x",
+                y=1.02,
+                yref="paper",
+                showarrow=False,
+                text="Outliers: Highly Complex Inventions (>3 std. dev.)",
+                align="right"
+            )
+
+            # Configure layout and center title
             fig.update_layout(
                 xaxis_title="Number of Components",
                 yaxis_title="Number of Patents",
                 font=dict(family="Arial, sans-serif", size=12),
-                height=400
+                height=400,
+                title={
+                    'text': 'Most Inventions Feature 2-10 Core Components',
+                    'x': 0.5,
+                    'xanchor': 'center'
+                }
             )
             
             return {
