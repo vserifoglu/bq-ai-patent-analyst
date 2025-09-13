@@ -36,11 +36,13 @@ class DashboardUI:
     
     def render_data_tab_connected_progressive(self):
         """Render data tab with progressive loading - complete sections at once"""
+        # Grand title for the entire dashboard tab
+        st.title("📊 Strategic Intelligence Dashboard")
         # Create placeholders for each complete section
         portfolio_section = st.empty()
-        distribution_section = st.empty() 
+        distribution_section = st.empty()
         outlier_section = st.empty()
-        
+
         return {
             'portfolio_section': portfolio_section,
             'distribution_section': distribution_section,
@@ -61,8 +63,9 @@ class DashboardUI:
                     self.data_viz_tab.render_strategic_insights_header()
                     # Separation between overall title/statement and charts
                     st.markdown("---")
-                    # Bubble chart title and key insight before the chart
+                    # Chart title (visible above the figure)
                     st.subheader("Competitive Landscape: Portfolio Breadth vs. Complexity")
+                    # Key insight before the chart
                     st.caption("Key Insight: Companies in the top-right quadrant demonstrate both diverse and highly complex patent portfolios.")
                     if portfolio.get('success') and portfolio.get('data') and portfolio['data'].get('has_plotly'):
                         st.plotly_chart(portfolio['data']['figure'], use_container_width=True)
@@ -78,7 +81,9 @@ class DashboardUI:
         with sections['distribution_section'].container():
             with st.spinner("Loading component distribution analysis..."):
                 try:
+                    # Chart title (visible above the figure)
                     st.subheader("Invention Complexity Analysis")
+                    # Key insight before the chart
                     if distribution.get('success') and distribution.get('data') and distribution['data'].get('has_plotly'):
                         st.caption("""
                         Key Insight: The distribution shows that most patents are of low-to-medium complexity (2-10 components). The long tail of outliers corresponds to inventions with detailed technical diagrams, proving that our multimodal analysis is essential for capturing true architectural complexity.
@@ -141,7 +146,6 @@ class DashboardUI:
     def render_distribution_section_loading(self, target):
         with target.container():
             with st.spinner("Loading component distribution analysis..."):
-                self.data_viz_tab.render_component_analysis_header()
                 st.empty()
 
     def render_outlier_section_loading(self, target):
@@ -161,6 +165,7 @@ class DashboardUI:
                 st.markdown("---")
                 # Bubble chart title and key insight before the chart
                 st.subheader("Competitive Landscape: Portfolio Breadth vs. Complexity")
+                # Insight before the chart
                 st.caption("Key Insight: Companies in the top-right quadrant demonstrate both diverse and highly complex patent portfolios.")
                 if portfolio.get('success') and portfolio.get('data') and portfolio['data'].get('has_plotly'):
                     st.plotly_chart(portfolio['data']['figure'], use_container_width=True)
@@ -176,6 +181,7 @@ class DashboardUI:
         with target.container():
             try:
                 st.subheader("Invention Complexity Analysis")
+                # Insight before the chart
                 if distribution.get('success') and distribution.get('data') and distribution['data'].get('has_plotly'):
                     st.caption("""
                     Key Insight: The distribution shows that most patents are of low-to-medium complexity (2-10 components). The long tail of outliers corresponds to inventions with detailed technical diagrams, proving that our multimodal analysis is essential for capturing true architectural complexity.
