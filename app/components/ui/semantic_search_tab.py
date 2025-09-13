@@ -6,20 +6,8 @@ class SemanticSearchTabUI:
     """UI class for semantic search tab"""
     
     def render_project_narrative(self):
-        """Display project description and business impact"""
-        st.markdown("""
-            ## The Challenge: Analyzing Unstructured Patent Data
-            
-            Patent analysis traditionally requires hundreds of hours of expensive expert analysis from patent lawyers 
-            or R&D engineers. This project solves the critical challenge of analyzing unstructured patent PDFs by 
-            building an end-to-end pipeline that transforms them into a structured, queryable Knowledge Graph.
-            
-            **Business Impact:**
-            - **Time Savings:** Reduce research time from hours to minutes
-            - **Cost Efficiency:** Automate tasks requiring expert analysis
-            - **Deep Insights:** Discover hidden technical patterns across patents
-            - **Scalable Analysis:** Process hundreds of patents automatically
-        """)
+        """Minimal narrative (intentionally left blank; search box provides context)."""
+        pass
     
     def render_search_box(self, current_query: str = "") -> dict:
         """Render search input and return user actions"""
@@ -27,33 +15,55 @@ class SemanticSearchTabUI:
         col1, col2, col3 = st.columns([1, 2, 1])
         
         with col2:
-            # Centered search header and description
-            st.markdown("### 🔍 Search Patent Knowledge Graph")
-            st.markdown("""
-            Enter your technical question below. Our AI will search through the patent knowledge graph 
-            to find relevant components and technical details.
-            """)
-            
-            st.markdown("")  # Add some spacing
-            
+            # Combined, concise intro
+            st.header("🔎 Semantic Component Search")
+            st.markdown(
+                """
+                Enter a technical function below to search the knowledge graph. The AI-powered search will find the most functionally similar components and their parent patents, regardless of keywords.
+                """
+            )
+
+            # Quick examples
+            st.subheader("Quick Examples")
+            ex_query = None
+            ex_cols = st.columns(4)
+            examples = [
+                ("Encryption Algorithm", "Encryption Algorithm"),
+                ("Data Compression", "Data Compression"),
+                ("Thermal Management", "Thermal management system"),
+                ("Battery Safety", "Battery protection and safety")
+            ]
+            for i, (label, val) in enumerate(examples):
+                with ex_cols[i]:
+                    if st.button(label, key=f"ex_btn_{i}"):
+                        ex_query = val
+
+            st.markdown("")  # spacing
+
             # Search input field
             search_input = st.text_input(
-                "What technical components are you looking for?",
+                "What technical function are you looking for?",
                 value=current_query,
-                placeholder="e.g., 'wireless communication modules' or 'battery management systems'",
+                placeholder="e.g., 'precise fluid delivery mechanism' or 'user authentication method'",
                 key="search_input",
-                help="Ask questions about technical components, materials, or patent details"
+                help="Enter a functional description, e.g., 'a mechanism for precise fluid delivery' or 'a method for authenticating a user'."
             )
-            
-            # Search button
-            search_clicked = st.button("🔍 Search Patents", type="primary", use_container_width=True)
 
-            # View toggle
-            grouped_view = st.toggle("Group results by patent", value=True, help="Show a patent summary with top component hits")
+            # Controls
+            search_clicked = st.button("🔍 Search Patents", type="primary", use_container_width=True)
+            flat_mode = st.toggle(
+                "Show results as a simple list (Power-user mode)",
+                value=False,
+                help="Default view groups similar components under their parent patent. Toggle ON to see a flat, ungrouped list of all matching components."
+            )
+
+            # Resolve effective query and mode
+            effective_query = ex_query if ex_query else search_input
+            grouped_view = not flat_mode
         
         return {
-            'query': search_input.strip() if search_input else "",
-            'search_clicked': search_clicked,
+            'query': effective_query.strip() if effective_query else "",
+            'search_clicked': bool(search_clicked or ex_query),
             'grouped': grouped_view
         }
     
