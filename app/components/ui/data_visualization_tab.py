@@ -5,6 +5,45 @@ import pandas as pd
 class DataVisualizationTabUI:
     """Dashboard UI class for data visualization tab"""
 
+    def render_roi_section(self):
+        """Render Business Impact & ROI metrics section above charts"""
+        st.header("Business Impact & ROI")
+        st.markdown(
+            """
+            The insights on this page are derived from an automated AI pipeline that transforms raw PDFs into a queryable intelligence asset. This approach delivers a transformative and quantifiable return on investment compared to traditional manual analysis.
+            """
+        )
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric(
+                label="Manual Cost Avoided",
+                value="$90,000",
+                delta="Assumes 600+ expert hours @ ~$150/hr",
+                delta_color="off",
+            )
+
+        with col2:
+            st.metric(
+                label="Immediate Project ROI",
+                value="≈4,500×",
+                delta="=$90k savings ÷ ~$20 pipeline run",
+                delta_color="off",
+            )
+
+        with col3:
+            st.metric(
+                label="Time-to-Insight Reduction",
+        value="≈99.9%",
+        delta="605 hours → 15 minutes",
+                delta_color="off",
+            )
+
+    # Brief assumptions for transparency
+    st.caption("Assumptions: 605 expert hours at ~$150/hour; single pipeline run cost about $20; time reduced from 605 hours to 15 minutes.")
+    st.divider()
+
     def render_strategic_insights_header(self):
         """Display strategic insights section header"""
         st.markdown("#### 🎯 Strategic Insights from the Patent Corpus")

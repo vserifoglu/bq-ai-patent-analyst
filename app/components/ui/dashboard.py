@@ -53,9 +53,12 @@ class DashboardUI:
 
         # Portfolio section
         with sections['portfolio_section'].container():
+            # ROI section (static, lightweight)
+            self.data_viz_tab.render_roi_section()
             with st.spinner("Loading strategic portfolio analysis..."):
                 try:
                     self.data_viz_tab.render_strategic_insights_header()
+                    st.subheader("Strategic Portfolio Analysis")
                     col1, col2 = st.columns([2, 1])
                     with col1:
                         if portfolio.get('success') and portfolio.get('data') and portfolio['data'].get('has_plotly'):
@@ -75,6 +78,7 @@ class DashboardUI:
             with st.spinner("Loading component distribution analysis..."):
                 try:
                     self.data_viz_tab.render_component_analysis_header()
+                    st.subheader("Invention Complexity Analysis")
                     col1, col2 = st.columns([2, 1])
                     with col1:
                         if distribution.get('success') and distribution.get('data') and distribution['data'].get('has_plotly'):
@@ -150,7 +154,10 @@ class DashboardUI:
     def render_portfolio_section(self, target, portfolio: dict):
         with target.container():
             try:
+                # ROI section (static, lightweight)
+                self.data_viz_tab.render_roi_section()
                 self.data_viz_tab.render_strategic_insights_header()
+                st.subheader("Strategic Portfolio Analysis")
                 col1, col2 = st.columns([2, 1])
                 with col1:
                     if portfolio.get('success') and portfolio.get('data') and portfolio['data'].get('has_plotly'):
@@ -169,6 +176,7 @@ class DashboardUI:
         with target.container():
             try:
                 self.data_viz_tab.render_component_analysis_header()
+                st.subheader("Invention Complexity Analysis")
                 col1, col2 = st.columns([2, 1])
                 with col1:
                     if distribution.get('success') and distribution.get('data') and distribution['data'].get('has_plotly'):
