@@ -51,15 +51,15 @@ class SemanticSearchTabUI:
 
             # Controls
             search_clicked = st.button("🔍 Search Patents", type="primary", use_container_width=True)
-            flat_mode = st.toggle(
-                "Show results as a simple list (Power-user mode)",
-                value=False,
-                help="Default view groups similar components under their parent patent. Toggle ON to see a flat, ungrouped list of all matching components."
+            grouped_mode = st.checkbox(
+                "Group results by patent",
+                value=True,
+                help="Recommended for readability. Uncheck to see a flat, ungrouped list of all matching components."
             )
 
             # Resolve effective query and mode
             effective_query = ex_query if ex_query else search_input
-            grouped_view = not flat_mode
+            grouped_view = bool(grouped_mode)
         
         return {
             'query': effective_query.strip() if effective_query else "",
