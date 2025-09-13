@@ -40,9 +40,7 @@ class DataVisualizationTabUI:
                 delta_color="off",
             )
 
-    # Brief assumptions for transparency
-    st.caption("Assumptions: 605 expert hours at ~$150/hour; single pipeline run cost about $20; time reduced from 605 hours to 15 minutes.")
-    st.divider()
+    # (Assumptions caption removed per request)
 
     def render_strategic_insights_header(self):
         """Display strategic insights section header"""

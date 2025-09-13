@@ -188,19 +188,24 @@ class VisualizationService:
                 color="applican",
                 hover_name="applican",
                 size_max=60,
-                title="Strategic Patent Portfolio Analysis",
+                title="competitive landscape: portfolio Breadth vs complexity",
                 labels={
-                    "innovation_breadth": "Innovation Breadth (Number of Domains)",
-                    "average_connection_density": "Average Connection Density"
+                    "innovation_breadth": "Innovation Breadth (Number of Unique Domains)",
+                    "average_connection_density": "Architectural Complexity (Avg. Connections per Patent)"
                 }
             )
             
             # Configure layout
             fig.update_layout(
                 showlegend=False,
-                xaxis_title="Innovation Breadth ➡️",
-                yaxis_title="Architectural Complexity ⬆️",
-                height=400
+                xaxis_title="Innovation Breadth (Number of Unique Domains)",
+                yaxis_title="Architectural Complexity (Avg. Connections per Patent)",
+                height=400,
+                title={
+                    'text': 'competitive landscape: portfolio Breadth vs complexity',
+                    'x': 0.5,
+                    'xanchor': 'center'
+                }
             )
             
             return {

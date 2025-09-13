@@ -55,20 +55,17 @@ class DashboardUI:
         with sections['portfolio_section'].container():
             # ROI section (static, lightweight)
             self.data_viz_tab.render_roi_section()
+            st.markdown("---")
             with st.spinner("Loading strategic portfolio analysis..."):
                 try:
                     self.data_viz_tab.render_strategic_insights_header()
-                    st.subheader("Strategic Portfolio Analysis")
-                    col1, col2 = st.columns([2, 1])
-                    with col1:
-                        if portfolio.get('success') and portfolio.get('data') and portfolio['data'].get('has_plotly'):
-                            st.plotly_chart(portfolio['data']['figure'], use_container_width=True)
-                            if portfolio.get('message'):
-                                st.success(f"✅ {portfolio['message']}")
-                        else:
-                            st.error(f"❌ Portfolio analysis failed: {portfolio.get('message', 'No message')}")
-                    with col2:
-                        self.data_viz_tab.render_portfolio_explanation()
+                    if portfolio.get('success') and portfolio.get('data') and portfolio['data'].get('has_plotly'):
+                        st.plotly_chart(portfolio['data']['figure'], use_container_width=True)
+                        st.caption("Key Insight: Companies in the top-right quadrant demonstrate both diverse and highly complex patent portfolios.")
+                        if portfolio.get('message'):
+                            st.success(f"✅ {portfolio['message']}")
+                    else:
+                        st.error(f"❌ Portfolio analysis failed: {portfolio.get('message', 'No message')}")
                     st.markdown("---")
                 except Exception as e:
                     st.error(f"❌ Portfolio section error: {str(e)}")
@@ -156,18 +153,15 @@ class DashboardUI:
             try:
                 # ROI section (static, lightweight)
                 self.data_viz_tab.render_roi_section()
+                st.markdown("---")
                 self.data_viz_tab.render_strategic_insights_header()
-                st.subheader("Strategic Portfolio Analysis")
-                col1, col2 = st.columns([2, 1])
-                with col1:
-                    if portfolio.get('success') and portfolio.get('data') and portfolio['data'].get('has_plotly'):
-                        st.plotly_chart(portfolio['data']['figure'], use_container_width=True)
-                        if portfolio.get('message'):
-                            st.success(f"✅ {portfolio['message']}")
-                    else:
-                        st.error(f"❌ Portfolio analysis failed: {portfolio.get('message', 'No message')}")
-                with col2:
-                    self.data_viz_tab.render_portfolio_explanation()
+                if portfolio.get('success') and portfolio.get('data') and portfolio['data'].get('has_plotly'):
+                    st.plotly_chart(portfolio['data']['figure'], use_container_width=True)
+                    st.caption("Key Insight: Companies in the top-right quadrant demonstrate both diverse and highly complex patent portfolios.")
+                    if portfolio.get('message'):
+                        st.success(f"✅ {portfolio['message']}")
+                else:
+                    st.error(f"❌ Portfolio analysis failed: {portfolio.get('message', 'No message')}")
                 st.markdown("---")
             except Exception as e:
                 st.error(f"❌ Portfolio section error: {str(e)}")
