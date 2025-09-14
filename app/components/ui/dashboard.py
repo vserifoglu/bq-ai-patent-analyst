@@ -15,7 +15,6 @@ class DashboardUI:
     def render_home_overview_mode(self) -> dict:
         """Render home tab in overview mode"""
         self.semantic_search_tab.render_project_narrative()
-        st.markdown("---")
         return self.semantic_search_tab.render_search_box()
     
     def render_home_search_mode(self, query: str, results_df=None, 
