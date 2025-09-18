@@ -14,8 +14,6 @@ The best way to experience this project is through the live, deployed prototype 
 -   **Live Streamlit App:** [**https://patent-search-analytics.streamlit.app/**](https://patent-search-analytics.streamlit.app/)
 -   **Video Walkthrough:** *(Link to your final YouTube video will be placed here)*
 
-![Semantic Search Demo](https://raw.githubusercontent.com/veyselserifoglu/bq-ai-patent-analyst/refs/heads/main/doc/search_engine.png)
-
 ---
 
 ## 🎯 Business Impact & ROI
