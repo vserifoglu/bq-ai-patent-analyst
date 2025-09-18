@@ -12,7 +12,7 @@ This project is a submission for the Google Cloud & Kaggle Hackathon. It demonst
 The best way to experience this project is through the live, deployed prototype and the 2.5-minute video overview.
 
 -   **Live Streamlit App:** [**https://patent-search-analytics.streamlit.app/**](https://patent-search-analytics.streamlit.app/)
--   **Video Walkthrough:** *(Link to your final YouTube video will be placed here)*
+-   **Video Walkthrough:** [**https://youtu.be/6WVi1cdd5fw**](https://youtu.be/6WVi1cdd5fw)
 
 ---
 
