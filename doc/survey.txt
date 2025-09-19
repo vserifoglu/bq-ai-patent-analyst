@@ -1,0 +1,36 @@
+--- USER SURVEY ---
+
+1. Please tell us how many months of experience with BigQuery AI each team member has.
+- Team Member 1 (Myself): 1 month of direct experience with BigQuery AI functions.
+
+2. Please tell us how many months of experience with Google Cloud each team member has.
+- Team Member 1 (Myself): 1 month of general experience with the Google Cloud platform.
+
+3. We’d love to hear from you and your experience in working with the technology during this hackathon, 
+   positive or negative. Please provide any feedback on your experience with BigQuery AI.
+
+Overall, the experience was incredibly positive and demonstrated the power of integrating complex AI 
+capabilities directly into the SQL workflow.
+
+POSITIVE EXPERIENCES:
+- The `AI.GENERATE_TABLE` function is a game-changer. The ability to extract structured, nested data (like a knowledge graph) 
+    from unstructured text with a single function is remarkably powerful and saved an immense amount of development time 
+    compared to traditional parsing methods.
+
+- The multimodal capabilities of `ML.GENERATE_TEXT` with Gemini were impressive, allowing for the analysis of both text and 
+    technical diagrams within a single pipeline.
+
+- The seamless integration between BigQuery, Object Tables, and Vertex AI models creates a very elegant and efficient serverless
+     architecture.
+
+AREAS FOR IMPROVEMENT / SUGGESTIONS:
+- The 5,000-row minimum for creating an IVF `VECTOR INDEX` presents a challenge for high-performance prototypes on smaller, 
+    yet still significant, datasets. While direct scanning works, the inability to use an index on a dataset of ~2,500 rows 
+    means a key performance feature cannot be demonstrated.
+
+- Authentication for deployed apps was challenging due to the two separate identities involved: our app's service account 
+    needs permission to use the connection, while the connection's own service account needs permission to call the AI model. 
+    A more unified permission model for this pattern would be helpful.
+
+- The process for generating Signed URLs for GCS objects referenced in BigQuery could be more tightly integrated, perhaps 
+    through a built-in SQL function, to simplify the creation of links in external applications.
