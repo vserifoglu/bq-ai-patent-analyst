@@ -1,9 +1,23 @@
 # The AI Patent Analyst
+🏆 **Winner — Google Cloud & Kaggle Hackathon (2025)**
+
+This project was selected as a winner in the Google Cloud & Kaggle Hackathon. The submission demonstrates an end‑to‑end BigQuery AI pipeline and an interactive Streamlit demo.
+
+<p align="center">
+	<a href="https://www.kaggle.com/competitions/bigquery-ai-hackathon/hackathon-winners">
+		<img src="https://img.shields.io/badge/Winner-Google%20Cloud%20%26%20Kaggle-brightgreen.svg" alt="Winner — Google Cloud & Kaggle Hackathon" width="220" />
+	</a>
+</p>
+
+<p align="center"><em>Awarded Winner — Google Cloud & Kaggle Hackathon (2025).</em></p>
+
+---
+
 ### From Unstructured PDFs to Interactive Strategic Intelligence with BigQuery AI
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://patent-search-analytics.streamlit.app/)
 
-This project is a submission for the Google Cloud & Kaggle Hackathon. It demonstrates a complete, end-to-end AI pipeline that transforms unstructured patent PDFs into a queryable knowledge graph, delivering real-time insights via an interactive Streamlit application.
+This repository contains the code for the interactive Streamlit dashboard and the data pipeline that transforms unstructured patent PDFs into a queryable knowledge graph, delivering real-time insights.
 
 ---
 
