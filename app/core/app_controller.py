@@ -286,7 +286,6 @@ class AppController:
         except Exception as e:
             return False, f"Portfolio analysis failed: {str(e)}", None
 
-    # ---------------- Signed URL for patents ----------------
     def get_signed_patent_url(self, uri: str, expires_minutes: int = 10) -> tuple[bool, str, str | None]:
         """Generate a V4 signed HTTPS URL for a given gs:// patent URI.
 
@@ -300,7 +299,6 @@ class AppController:
         except Exception as e:
             return False, f"Signing failed: {str(e)}", None
 
-    # ---------------- Phase A additions: grouped search ----------------
     def search_patents_grouped(
         self,
         query: str,
